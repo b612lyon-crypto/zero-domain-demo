@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZERO DOMAIN - 白核幸存者</title>
+  <link rel="icon" href="data:," />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #06080f;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    #game-root {
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-root"></div>
+
+  <script>
+    "use strict";
+
+    // =============================
+    // 全局数值配置区：面试演示时可优先调整这里
+    // =============================
+    const CONFIG = {
+      world: {
+        width: 1280,
+        height: 720,
+        background: 0x070a14,
+        gridColor: 0x163452,
+        gridSize: 48
+      },
+      player: {
+        size: 28,
+        maxHp: 130,
+        moveSpeed: 250,
+        acceleration: 2200,
+        drag: 8.5,
+        attackInterval: 480,
+        bulletSpeed: 650,
+        bulletDamage: 26,
+        bulletLifetime: 1100,
+        bulletCount: 1,
+        bulletPierce: 0,
+        recoil: 42,
+        pickupRange: 95,
+        regenPerSecond: 0,
+        damageReduction: 0
+      },
+      bullet: {
+        width: 18,
+        height: 6,
+        color: 0x47f7ff,
+        glowColor: 0xb7ffff
+      },
+      enemy: {
+        baseSpawnInterval: 800,
+        spawnIntervalMin: 210,
+        spawnBatchBase: 2,
+        contactDamage: 9,
+        hitKnockback: 90,
+        hitFlashDuration: 70,
+        variants: {
+          drone: {
+            name: "drone",
+            shape: "circle",
+            texture: "enemyRed",
+            color: 0xff3d71,
+            radius: 17,
+            displaySize: 46,
+            hp: 30,
+            speed: 88,
+            xp: 8,
+            unlockWave: 1,
+            weight: 9
+          },
+          swarmer: {
+            name: "swarmer",
+            shape: "circle",
+            texture: "enemyRed",
+            color: 0xff6a8b,
+            radius: 13,
+            displaySize: 34,
+            hp: 16,
+            speed: 164,
+            xp: 6,
+            unlockWave: 2,
+            weight: 6,
+            behavior: "weave",
+            rotationSpeed: 6.1,
+            contactDamageMultiplier: 0.9
+          },
+          cutter: {
+            name: "cutter",
+            shape: "triangle",
+            texture: "enemyYellow",
+            color: 0xffb02e,
+            radius: 18,
+            displaySize: 50,
+            hp: 25,
+            speed: 136,
+            xp: 10,
+            unlockWave: 2,
+            weight: 5
+          },
+          raider: {
+            name: "raider",
+            shape: "triangle",
+            texture: "enemyYellow",
+            color: 0xffc14d,
+            radius: 20,
+            displaySize: 58,
+            hp: 44,
+            speed: 102,
+            xp: 14,
+            unlockWave: 3,
+            weight: 3,
+            behavior: "dash",
+            dashSpeedMultiplier: 2.85,
+            dashDuration: 0.34,
+            dashCooldown: 2.7,
+            rotationSpeed: 5.4,
+            contactDamageMultiplier: 1.25
+          },
+          tank: {
+            name: "tank",
+            shape: "diamond",
+            texture: "enemyPurple",
+            color: 0x9b5cff,
+            radius: 23,
+            displaySize: 58,
+            hp: 66,
+            speed: 70,
+            xp: 18,
+            unlockWave: 4,
+            weight: 3
+          },
+          elite: {
+            name: "elite",
+            shape: "circle",
+            texture: "enemyBlueElite",
+            color: 0x47f7ff,
+            radius: 27,
+            displaySize: 68,
+            hp: 92,
+            speed: 82,
+            xp: 28,
+            unlockWave: 3,
+            weight: 1.5
+          },
+          miniboss: {
+            name: "miniboss",
+            shape: "hexagon",
+            texture: "enemyBlackMiniboss",
+            color: 0xb56cff,
+            radius: 42,
+            displaySize: 104,
+            hp: 280,
+            speed: 48,
+            xp: 72,
+            unlockWave: 6,
+            weight: 0.35
+          }
+        }
+      },
+      wave: {
+        duration: 22,
+        hpGrowth: 0.2,
+        speedGrowth: 0.065,
+        batchGrowthEvery: 2
+      },
+      xp: {
+        firstLevelNeed: 24,
+        growth: 1.25,
+        orbRadius: 7,
+        orbAttractSpeed: 360,
+        gainMultiplier: 1
+      },
+      ui: {
+        healthLerp: 0.14,
+        xpLerp: 0.16,
+        neonCyan: 0x47f7ff,
+        neonGreen: 0x42ff99,
+        neonRed: 0xff3864,
+        panel: 0x0c1322
+      },
+      feedback: {
+        screenShake: 0.004,
+        deathParticles: 18,
+        levelFlashAlpha: 0.72
+      },
+      buffs: [
+        {
+          id: "damage",
+          category: "攻击",
+          name: "高能弹头",
+          desc: "子弹伤害 +20%",
+          color: 0xff4f7b,
+          icon: "buffIconDamage",
+          apply(stats) { stats.bulletDamage *= 1.2; }
+        },
+        {
+          id: "attack_speed",
+          category: "攻击",
+          name: "急速协议",
+          desc: "攻击速度 +15%",
+          color: 0xffd166,
+          icon: "buffIconAttackSpeed",
+          apply(stats) { stats.attackInterval *= 0.85; }
+        },
+        {
+          id: "bullet_count",
+          category: "攻击",
+          name: "扇形散射",
+          desc: "子弹数量 +1",
+          color: 0x67e8f9,
+          icon: "buffIconSolarBloom",
+          apply(stats) { stats.bulletCount = Math.min(stats.bulletCount * 2, 16); }
+        },
+        {
+          id: "pierce",
+          category: "攻击",
+          name: "穿甲链路",
+          desc: "子弹穿透 +1",
+          color: 0xa78bfa,
+          icon: "buffIconPierce",
+          apply(stats) { stats.bulletPierce += 1; }
+        },
+        {
+          id: "max_hp",
+          category: "生存",
+          name: "生命扩容",
+          desc: "最大生命值 +30",
+          color: 0x42ff99,
+          icon: "buffIconMaxHp",
+          apply(stats, scene) {
+            stats.maxHp += 30;
+            scene.player.hp = Math.min(stats.maxHp, scene.player.hp + 30);
+          }
+        },
+        {
+          id: "regen",
+          category: "生存",
+          name: "纳米修复",
+          desc: "每秒生命恢复 +1",
+          color: 0x2dd4bf,
+          icon: "buffIconRegen",
+          apply(stats) { stats.regenPerSecond += 1; }
+        },
+        {
+          id: "move_speed",
+          category: "生存",
+          name: "轻量外骨骼",
+          desc: "移动速度 +15%",
+          color: 0x38bdf8,
+          icon: "buffIconMoveSpeed",
+          apply(stats) { stats.moveSpeed *= 1.15; }
+        },
+        {
+          id: "damage_reduce",
+          category: "生存",
+          name: "偏转护盾",
+          desc: "受击伤害减免 20%",
+          color: 0x60a5fa,
+          icon: "buffIconDamageReduce",
+          apply(stats) {
+            stats.damageReduction = 1 - (1 - stats.damageReduction) * 0.8;
+          }
+        },
+        {
+          id: "xp_gain",
+          category: "功能",
+          name: "经验增幅",
+          desc: "经验获取效率 +25%",
+          color: 0x34d399,
+          icon: "buffIconXpGain",
+          apply(stats) { stats.xpGainMultiplier *= 1.25; }
+        },
+        {
+          id: "pickup_range",
+          category: "功能",
+          name: "磁吸立场",
+          desc: "拾取范围 +50%",
+          color: 0xf472b6,
+          icon: "buffIconPickupRange",
+          apply(stats) { stats.pickupRange *= 1.5; }
+        }
+      ]
+    };
+
+    const bulletCountBuff = CONFIG.buffs.find((buff) => buff.id === "bullet_count");
+    if (bulletCountBuff) {
+      bulletCountBuff.name = "太阳绽放";
+      bulletCountBuff.desc = "弹幕数量 x2，最终形成日冕散射";
+    }
+
+    const ASSETS = {
+      arenaBg: "assets/zero-domain/battle_arena_background_v2_clean.png",
+      startHeroBg: "assets/zero-domain/start_screen_keyart_v1_clean.png",
+      playerBasic: "assets/zero-domain/player_core_basic.png",
+      playerUpgraded: "assets/zero-domain/player_core_upgraded.png",
+      enemyRed: "assets/zero-domain/enemy_red_basic.png",
+      enemyYellow: "assets/zero-domain/enemy_yellow_fast.png",
+      enemyPurple: "assets/zero-domain/enemy_purple_tank.png",
+      enemyBlueElite: "assets/zero-domain/enemy_blue_elite.png",
+      enemyBlackMiniboss: "assets/zero-domain/enemy_black_miniboss.png",
+      bulletBasic: "assets/zero-domain/bullet_cyan_basic.png",
+      bulletSolar: "assets/zero-domain/bullet_solar_lance_v2_clean.png",
+      hitImpact: "assets/zero-domain/vfx_hit_impact.png",
+      sunburstMuzzle: "assets/zero-domain/vfx_sunburst_muzzle_v1_clean.png",
+      enemyDeath: "assets/zero-domain/vfx_enemy_death.png",
+      xpOrb: "assets/zero-domain/pickup_xp_orb.png",
+      hudPanel: "assets/zero-domain/ui/hud_panel.png",
+      cardFrameCommon: "assets/zero-domain/ui/card_frame_common.png",
+      cardFrameRare: "assets/zero-domain/ui/card_frame_rare.png",
+      cardFrameEpic: "assets/zero-domain/ui/card_frame_epic.png",
+      gameOverPanel: "assets/zero-domain/ui/game_over_panel.png",
+      buffIconDamage: "assets/zero-domain/ui/icons/buff_icon_damage.png",
+      buffIconAttackSpeed: "assets/zero-domain/ui/icons/buff_icon_attack_speed.png",
+      buffIconBulletCount: "assets/zero-domain/ui/icons/buff_icon_bullet_count.png",
+      buffIconSolarBloom: "assets/zero-domain/buff_icon_solar_bloom.png",
+      buffIconPierce: "assets/zero-domain/ui/icons/buff_icon_pierce.png",
+      buffIconMaxHp: "assets/zero-domain/ui/icons/buff_icon_max_hp.png",
+      buffIconRegen: "assets/zero-domain/ui/icons/buff_icon_regen.png",
+      buffIconMoveSpeed: "assets/zero-domain/ui/icons/buff_icon_move_speed.png",
+      buffIconDamageReduce: "assets/zero-domain/ui/icons/buff_icon_damage_reduce.png",
+      buffIconXpGain: "assets/zero-domain/ui/icons/buff_icon_xp_gain.png",
+      buffIconPickupRange: "assets/zero-domain/ui/icons/buff_icon_pickup_range.png",
+      waveWarningBanner: "assets/zero-domain/ui/wave_warning_banner.png",
+      bossWarningMarker: "assets/zero-domain/ui/boss_warning_marker.png"
+    };
+
+    const AUDIO_ASSETS = {
+      bgmMenu: "assets/zero-domain/bgm_zero_domain_menu_loop.mp3",
+      bgmCombatPhase1: "assets/zero-domain/bgm_zero_domain_combat_loop_phase1.mp3",
+      bgmCombatPhase2: "assets/zero-domain/bgm_zero_domain_combat_loop_phase2.mp3",
+      bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
+    };
+
+    // =============================
+    // Web Audio API 合成音效
+    // =============================
+    class SoundSynth {
+      constructor() {
+        this.context = null;
+        this.enabled = true;
+      }
+
+      ensureContext() {
+        if (!this.context) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.context = new AudioContext();
+        }
+        if (this.context.state === "suspended") {
+          this.context.resume();
+        }
+      }
+
+      playShoot() {
+        this.ensureContext();
+        const now = this.context.currentTime;
+        const osc = this.context.createOscillator();
+        const gain = this.context.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(740, now);
+        osc.frequency.exponentialRampToValueAtTime(260, now + 0.055);
+        gain.gain.setValueAtTime(0.055, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+        osc.connect(gain).connect(this.context.destination);
+        osc.start(now);
+        osc.stop(now + 0.075);
+      }
+
+      playHit() {
+        this.ensureContext();
+        const now = this.context.currentTime;
+        const osc = this.context.createOscillator();
+        const gain = this.context.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.linearRampToValueAtTime(95, now + 0.08);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain).connect(this.context.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      }
+
+      playLevelUp() {
+        this.ensureContext();
+        const now = this.context.currentTime;
+        [523, 659, 784].forEach((freq, index) => {
+          const osc = this.context.createOscillator();
+          const gain = this.context.createGain();
+          const start = now + index * 0.075;
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.001, start);
+          gain.gain.exponentialRampToValueAtTime(0.11, start + 0.018);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+          osc.connect(gain).connect(this.context.destination);
+          osc.start(start);
+          osc.stop(start + 0.2);
+        });
+      }
+    }
+
+    class MusicDirector {
+      constructor() {
+        this.scene = null;
+        this.currentKey = null;
+        this.currentTrack = null;
+        this.tracks = new Map();
+        this.trackConfig = {
+          bgmMenu: { volume: 0.42, loop: true },
+          bgmCombatPhase1: { volume: 0.36, loop: true },
+          bgmCombatPhase2: { volume: 0.4, loop: true },
+          bgmRedAlert: { volume: 0.44, loop: true }
+        };
+      }
+
+      bind(scene) {
+        this.scene = scene;
+        Object.keys(AUDIO_ASSETS).forEach((key) => this.ensureTrack(key));
+      }
+
+      ensureTrack(key) {
+        if (!this.scene || this.tracks.has(key)) {
+          return this.tracks.get(key);
+        }
+        const config = this.trackConfig[key] || { volume: 0.35, loop: true };
+        const track = this.scene.sound.add(key, {
+          loop: config.loop,
+          volume: 0
+        });
+        this.tracks.set(key, track);
+        return track;
+      }
+
+      resumeAudio() {
+        soundSynth.ensureContext();
+        if (!this.scene || !this.scene.sound) {
+          return;
+        }
+        if (this.scene.sound.context && this.scene.sound.context.state === "suspended" && this.scene.sound.context.resume) {
+          this.scene.sound.context.resume();
+        }
+        if (typeof this.scene.sound.unlock === "function") {
+          this.scene.sound.unlock();
+        }
+      }
+
+      playLoop(key, options = {}) {
+        if (!this.scene) {
+          return;
+        }
+
+        const targetTrack = this.ensureTrack(key);
+        if (!targetTrack) {
+          return;
+        }
+
+        this.resumeAudio();
+        const config = this.trackConfig[key] || { volume: 0.35, loop: true };
+        const targetVolume = options.volume ?? config.volume;
+        const fadeDuration = options.fadeDuration ?? 900;
+
+        if (this.currentTrack === targetTrack && targetTrack.isPlaying) {
+          if (this.scene.tweens) {
+            this.scene.tweens.killTweensOf(targetTrack);
+          }
+          targetTrack.setLoop(config.loop);
+          targetTrack.volume = targetVolume;
+          this.currentKey = key;
+          return;
+        }
+
+        targetTrack.setLoop(config.loop);
+        if (!targetTrack.isPlaying) {
+          targetTrack.play({ loop: config.loop, volume: 0 });
+        } else {
+          targetTrack.setVolume(0);
+        }
+
+        if (this.scene.tweens) {
+          this.scene.tweens.add({
+            targets: targetTrack,
+            volume: targetVolume,
+            duration: fadeDuration,
+            ease: "Sine.easeOut"
+          });
+        } else {
+          targetTrack.volume = targetVolume;
+        }
+
+        if (this.currentTrack && this.currentTrack !== targetTrack) {
+          const previousTrack = this.currentTrack;
+          if (this.scene.tweens) {
+            this.scene.tweens.killTweensOf(previousTrack);
+            this.scene.tweens.add({
+              targets: previousTrack,
+              volume: 0,
+              duration: Math.max(260, Math.round(fadeDuration * 0.8)),
+              ease: "Sine.easeIn",
+              onComplete: () => previousTrack.stop()
+            });
+          } else {
+            previousTrack.stop();
+          }
+        }
+
+        this.currentKey = key;
+        this.currentTrack = targetTrack;
+      }
+
+      stopAll(fadeDuration = 420) {
+        if (!this.scene) {
+          return;
+        }
+        for (const track of this.tracks.values()) {
+          if (!track.isPlaying) {
+            continue;
+          }
+          if (this.scene.tweens) {
+            this.scene.tweens.killTweensOf(track);
+            this.scene.tweens.add({
+              targets: track,
+              volume: 0,
+              duration: fadeDuration,
+              ease: "Sine.easeIn",
+              onComplete: () => track.stop()
+            });
+          } else {
+            track.stop();
+          }
+        }
+        this.currentKey = null;
+        this.currentTrack = null;
+      }
+    }
+
+    const soundSynth = new SoundSynth();
+    const musicDirector = new MusicDirector();
+
+    function clonePlayerStats() {
+      return {
+        maxHp: CONFIG.player.maxHp,
+        moveSpeed: CONFIG.player.moveSpeed,
+        acceleration: CONFIG.player.acceleration,
+        drag: CONFIG.player.drag,
+        attackInterval: CONFIG.player.attackInterval,
+        bulletSpeed: CONFIG.player.bulletSpeed,
+        bulletDamage: CONFIG.player.bulletDamage,
+        bulletLifetime: CONFIG.player.bulletLifetime,
+        bulletCount: CONFIG.player.bulletCount,
+        bulletPierce: CONFIG.player.bulletPierce,
+        recoil: CONFIG.player.recoil,
+        pickupRange: CONFIG.player.pickupRange,
+        regenPerSecond: CONFIG.player.regenPerSecond,
+        damageReduction: CONFIG.player.damageReduction,
+        xpGainMultiplier: CONFIG.xp.gainMultiplier
+      };
+    }
+
+    function formatTime(totalSeconds) {
+      const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+      const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function normalize(x, y) {
+      const length = Math.hypot(x, y);
+      if (length <= 0.0001) {
+        return { x: 0, y: 0 };
+      }
+      return { x: x / length, y: y / length };
+    }
+
+    function shortestAngleDelta(from, to) {
+      return Phaser.Math.Angle.Wrap(to - from);
+    }
+
+    // =============================
+    // 开始界面
+    // =============================
+    class StartScene extends Phaser.Scene {
+      constructor() {
+        super("StartScene");
+      }
+
+      preload() {
+        Object.entries(ASSETS).forEach(([key, path]) => {
+          this.load.image(key, path);
+        });
+        Object.entries(AUDIO_ASSETS).forEach(([key, path]) => {
+          this.load.audio(key, path);
+        });
+      }
+
+      create() {
+        musicDirector.bind(this);
+        musicDirector.playLoop("bgmMenu", { fadeDuration: 600 });
+        this.gridOffset = 0;
+        this.grid = this.add.graphics();
+        this.heroBg = this.add.image(CONFIG.world.width / 2, CONFIG.world.height / 2, "startHeroBg")
+          .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
+          .setAlpha(0.88);
+        this.pulseLines = this.add.group();
+
+        this.title = this.add.text(CONFIG.world.width / 2, 185, "ZERO DOMAIN", {
+          fontFamily: "Arial",
+          fontSize: "72px",
+          fontStyle: "700",
+          color: "#f8fbff"
+        }).setOrigin(0.5);
+        this.title.setStroke("#1ef7ff", 5);
+        this.title.setShadow(0, 0, "#47f7ff", 24, true, true);
+
+        this.subtitle = this.add.text(CONFIG.world.width / 2, 257, "零号算域：白核幸存者", {
+          fontSize: "24px",
+          color: "#8ff6ff"
+        }).setOrigin(0.5);
+
+        this.add.text(CONFIG.world.width / 2, 334, "WASD 移动  ·  自动锁定最近敌人  ·  升级三选一强化", {
+          fontSize: "24px",
+          color: "#d5e7ff"
+        }).setOrigin(0.5);
+
+        this.add.text(CONFIG.world.width / 2, 385, "单局 3-5 分钟，击杀掉落经验球，持续成长压制敌潮", {
+          fontSize: "20px",
+          color: "#7f97b9"
+        }).setOrigin(0.5);
+
+        const button = this.add.rectangle(CONFIG.world.width / 2, 485, 270, 68, 0x0f2438, 0.95)
+          .setStrokeStyle(2, CONFIG.ui.neonCyan, 1)
+          .setInteractive({ useHandCursor: true });
+        const buttonText = this.add.text(button.x, button.y, "开始游戏", {
+          fontSize: "28px",
+          fontStyle: "700",
+          color: "#ffffff"
+        }).setOrigin(0.5);
+
+        button.on("pointerover", () => {
+          button.setFillStyle(0x143d5d, 1);
+          button.setScale(1.035);
+          buttonText.setScale(1.035);
+        });
+        button.on("pointerout", () => {
+          button.setFillStyle(0x0f2438, 0.95);
+          button.setScale(1);
+          buttonText.setScale(1);
+        });
+        button.on("pointerdown", () => {
+          soundSynth.ensureContext();
+          musicDirector.resumeAudio();
+          this.cameras.main.flash(180, 71, 247, 255, false);
+          this.time.delayedCall(120, () => this.scene.start("GameScene"));
+        });
+
+        this.add.text(CONFIG.world.width / 2, 650, "Phaser.js v3 · 本地素材包 · 程序化音效", {
+          fontSize: "16px",
+          color: "#55708d"
+        }).setOrigin(0.5);
+      }
+
+      update(_, delta) {
+        this.gridOffset = (this.gridOffset + delta * 0.018) % CONFIG.world.gridSize;
+        this.drawGrid();
+        this.heroBg.setAlpha(0.84 + Math.sin(this.time.now * 0.0014) * 0.035);
+        this.title.rotation = Math.sin(this.time.now * 0.0012) * 0.006;
+      }
+
+      drawGrid() {
+        this.grid.clear();
+        this.grid.fillStyle(CONFIG.world.background, 1);
+        this.grid.fillRect(0, 0, CONFIG.world.width, CONFIG.world.height);
+        this.grid.lineStyle(1, CONFIG.world.gridColor, 0.34);
+
+        for (let x = -CONFIG.world.gridSize; x <= CONFIG.world.width + CONFIG.world.gridSize; x += CONFIG.world.gridSize) {
+          this.grid.lineBetween(x + this.gridOffset, 0, x + this.gridOffset, CONFIG.world.height);
+        }
+        for (let y = -CONFIG.world.gridSize; y <= CONFIG.world.height + CONFIG.world.gridSize; y += CONFIG.world.gridSize) {
+          this.grid.lineBetween(0, y + this.gridOffset, CONFIG.world.width, y + this.gridOffset);
+        }
+
+        this.grid.lineStyle(2, 0x47f7ff, 0.16);
+        this.grid.strokeRect(120, 90, CONFIG.world.width - 240, CONFIG.world.height - 180);
+      }
+    }
+
+    // =============================
+    // 主游戏逻辑
+    // =============================
+    class GameScene extends Phaser.Scene {
+      constructor() {
+        super("GameScene");
+      }
+
+      create() {
+        this.stats = clonePlayerStats();
+        this.player = {
+          x: CONFIG.world.width / 2,
+          y: CONFIG.world.height / 2,
+          vx: 0,
+          vy: 0,
+          hp: this.stats.maxHp,
+          hurtCooldown: 0
+        };
+
+        this.level = 1;
+        this.xp = 0;
+        this.xpNeed = CONFIG.xp.firstLevelNeed;
+        this.kills = 0;
+        this.elapsed = 0;
+        this.wave = 1;
+        this.lastWave = 1;
+        this.nextShotAt = 0;
+        this.nextSpawnAt = 0;
+        this.enemyId = 1;
+        this.isGameOver = false;
+        this.musicTier = null;
+
+        this.enemies = [];
+        this.bullets = [];
+        this.orbs = [];
+        this.particles = [];
+        this.floaters = [];
+        this.selectedBuffs = [];
+
+        this.keys = this.input.keyboard.addKeys({
+          up: Phaser.Input.Keyboard.KeyCodes.W,
+          down: Phaser.Input.Keyboard.KeyCodes.S,
+          left: Phaser.Input.Keyboard.KeyCodes.A,
+          right: Phaser.Input.Keyboard.KeyCodes.D
+        });
+
+        this.backgroundImage = this.add.image(CONFIG.world.width / 2, CONFIG.world.height / 2, "arenaBg")
+          .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
+          .setAlpha(0.86);
+        this.background = this.add.graphics();
+        this.enemyLayer = this.add.container();
+        this.orbLayer = this.add.container();
+        this.bulletLayer = this.add.container();
+        this.particleLayer = this.add.container();
+        this.playerLayer = this.add.container();
+        this.textLayer = this.add.container();
+
+        this.playerGlow = this.add.circle(this.player.x, this.player.y, 34, 0x47f7ff, 0.15)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.playerBody = this.add.image(this.player.x, this.player.y, "playerBasic")
+          .setDisplaySize(58, 58);
+        this.playerAim = this.add.rectangle(this.player.x, this.player.y, 28, 4, 0x47f7ff, 0.7)
+          .setOrigin(0, 0.5);
+        this.pickupRing = this.add.circle(this.player.x, this.player.y, this.stats.pickupRange, 0x47f7ff, 0.025)
+          .setStrokeStyle(1, 0x47f7ff, 0.14);
+        this.playerLayer.add([this.pickupRing, this.playerGlow, this.playerBody, this.playerAim]);
+
+        musicDirector.bind(this);
+        musicDirector.playLoop("bgmCombatPhase1", { fadeDuration: 700 });
+        this.drawArenaBackground();
+        this.scene.launch("UIScene");
+        this.game.events.emit("ui-reset");
+        this.game.events.on("buff-selected", this.applyBuff, this);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+          this.game.events.off("buff-selected", this.applyBuff, this);
+        });
+      }
+
+      update(time, delta) {
+        if (this.isGameOver) {
+          return;
+        }
+
+        const dt = Math.min(delta / 1000, 0.034);
+        this.elapsed += dt;
+        this.wave = Math.floor(this.elapsed / CONFIG.wave.duration) + 1;
+        this.updateMusicState();
+        if (this.wave !== this.lastWave) {
+          this.lastWave = this.wave;
+          this.game.events.emit("wave-warning", { wave: this.wave });
+          this.cameras.main.shake(170, 0.006);
+        }
+
+        this.drawArenaBackground();
+        this.updatePlayer(dt);
+        this.updateShooting(time);
+        this.updateSpawning(time);
+        this.updateEnemies(dt);
+        this.updateBullets(dt);
+        this.updateOrbs(dt);
+        this.updateParticles(dt);
+
+        if (this.stats.regenPerSecond > 0 && this.player.hp > 0) {
+          this.player.hp = Math.min(this.stats.maxHp, this.player.hp + this.stats.regenPerSecond * dt);
+        }
+
+        this.emitUIState();
+      }
+
+      updateMusicState(force = false) {
+        let nextTier = "bgmCombatPhase1";
+        if (this.wave >= 7 || this.elapsed >= 150) {
+          nextTier = "bgmRedAlert";
+        } else if (this.wave >= 4 || this.elapsed >= 72) {
+          nextTier = "bgmCombatPhase2";
+        }
+
+        if (!force && this.musicTier === nextTier) {
+          return;
+        }
+        this.musicTier = nextTier;
+        musicDirector.playLoop(nextTier, { fadeDuration: nextTier === "bgmRedAlert" ? 1200 : 900 });
+      }
+
+      drawArenaBackground() {
+        this.background.clear();
+        this.background.fillStyle(CONFIG.world.background, 0.18);
+        this.background.fillRect(0, 0, CONFIG.world.width, CONFIG.world.height);
+        this.backgroundImage.setAlpha(0.82 + Math.sin(this.time.now * 0.001) * 0.035);
+
+        const gridSize = CONFIG.world.gridSize;
+        const offset = (this.elapsed * 18) % gridSize;
+        this.background.lineStyle(1, CONFIG.world.gridColor, 0.18);
+
+        for (let x = -gridSize; x <= CONFIG.world.width + gridSize; x += gridSize) {
+          this.background.lineBetween(x + offset, 0, x + offset, CONFIG.world.height);
+        }
+        for (let y = -gridSize; y <= CONFIG.world.height + gridSize; y += gridSize) {
+          this.background.lineBetween(0, y + offset, CONFIG.world.width, y + offset);
+        }
+
+        this.background.lineStyle(2, 0x47f7ff, 0.34);
+        this.background.strokeRect(20, 20, CONFIG.world.width - 40, CONFIG.world.height - 40);
+      }
+
+      updatePlayer(dt) {
+        let ax = 0;
+        let ay = 0;
+        if (this.keys.left.isDown) ax -= 1;
+        if (this.keys.right.isDown) ax += 1;
+        if (this.keys.up.isDown) ay -= 1;
+        if (this.keys.down.isDown) ay += 1;
+
+        const direction = normalize(ax, ay);
+        this.player.vx += direction.x * this.stats.acceleration * dt;
+        this.player.vy += direction.y * this.stats.acceleration * dt;
+
+        const dragFactor = Math.max(0, 1 - this.stats.drag * dt);
+        this.player.vx *= dragFactor;
+        this.player.vy *= dragFactor;
+
+        const speed = Math.hypot(this.player.vx, this.player.vy);
+        if (speed > this.stats.moveSpeed) {
+          const ratio = this.stats.moveSpeed / speed;
+          this.player.vx *= ratio;
+          this.player.vy *= ratio;
+        }
+
+        this.player.x = clamp(this.player.x + this.player.vx * dt, CONFIG.player.size / 2 + 20, CONFIG.world.width - CONFIG.player.size / 2 - 20);
+        this.player.y = clamp(this.player.y + this.player.vy * dt, CONFIG.player.size / 2 + 20, CONFIG.world.height - CONFIG.player.size / 2 - 20);
+        this.player.hurtCooldown = Math.max(0, this.player.hurtCooldown - dt);
+
+        this.playerBody.setPosition(this.player.x, this.player.y);
+        this.playerGlow.setPosition(this.player.x, this.player.y);
+        this.playerGlow.setScale(1 + Math.sin(this.time.now * 0.007) * 0.08);
+
+        const target = this.findNearestEnemy();
+        if (target) {
+          const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+          this.playerBody.rotation += shortestAngleDelta(this.playerBody.rotation, angle - Math.PI / 2) * 0.16;
+          this.playerAim.setVisible(true);
+          this.playerAim.setPosition(this.player.x, this.player.y);
+          this.playerAim.rotation = angle;
+        } else {
+          const moveAngle = Math.atan2(this.player.vy, this.player.vx);
+          if (Math.hypot(this.player.vx, this.player.vy) > 10) {
+            this.playerBody.rotation += shortestAngleDelta(this.playerBody.rotation, moveAngle - Math.PI / 2) * 0.08;
+          }
+          this.playerAim.setVisible(false);
+        }
+
+        this.pickupRing.setPosition(this.player.x, this.player.y);
+        this.pickupRing.setRadius(this.stats.pickupRange);
+        this.pickupRing.alpha = 0.09 + Math.sin(this.time.now * 0.006) * 0.025;
+      }
+
+      updateShooting(time) {
+        if (time < this.nextShotAt || this.enemies.length === 0) {
+          return;
+        }
+        const target = this.findNearestEnemy();
+        if (!target) {
+          return;
+        }
+
+        const baseAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+        const volleyAngles = this.getVolleyAngles(baseAngle);
+        if (volleyAngles.length > 1) {
+          this.spawnSunburstMuzzle(baseAngle, volleyAngles.length);
+        }
+
+        for (const angle of volleyAngles) {
+          this.spawnBullet(angle, volleyAngles.length);
+        }
+
+        this.player.vx -= Math.cos(baseAngle) * this.stats.recoil;
+        this.player.vy -= Math.sin(baseAngle) * this.stats.recoil;
+        this.cameras.main.shake(55, CONFIG.feedback.screenShake);
+        soundSynth.playShoot();
+        this.nextShotAt = time + Math.max(90, this.stats.attackInterval);
+      }
+
+      getVolleyAngles(baseAngle) {
+        const count = Math.max(1, Math.min(16, Math.round(this.stats.bulletCount)));
+        if (count === 1) {
+          return [baseAngle];
+        }
+        if (count >= 16) {
+          const spinOffset = (this.time.now * 0.0022) % (Math.PI * 2);
+          return Array.from({ length: count }, (_, index) =>
+            baseAngle + spinOffset + (Math.PI * 2 * index) / count
+          );
+        }
+
+        const maxArcDeg = count >= 8 ? 156 : count >= 4 ? 96 : 28;
+        const spreadStep = Phaser.Math.DegToRad(maxArcDeg / (count - 1));
+        const startOffset = -spreadStep * (count - 1) / 2;
+        return Array.from({ length: count }, (_, index) => baseAngle + startOffset + index * spreadStep);
+      }
+
+      getVolleyDamageScale(volleyCount) {
+        if (volleyCount >= 16) {
+          return 0.28;
+        }
+        if (volleyCount >= 8) {
+          return 0.44;
+        }
+        if (volleyCount >= 4) {
+          return 0.62;
+        }
+        if (volleyCount >= 2) {
+          return 0.82;
+        }
+        return 1;
+      }
+
+      getVolleyLifetimeScale(volleyCount) {
+        if (volleyCount >= 16) {
+          return 0.58;
+        }
+        if (volleyCount >= 8) {
+          return 0.72;
+        }
+        if (volleyCount >= 4) {
+          return 0.84;
+        }
+        return 1;
+      }
+
+      spawnSunburstMuzzle(baseAngle, volleyCount) {
+        const distance = volleyCount >= 16 ? 0 : CONFIG.player.size * 0.78;
+        const x = this.player.x + Math.cos(baseAngle) * distance;
+        const y = this.player.y + Math.sin(baseAngle) * distance;
+        const scale = volleyCount >= 16 ? 0.24 : 0.13 + volleyCount * 0.018;
+        const flash = this.add.image(x, y, "sunburstMuzzle")
+          .setScale(scale)
+          .setRotation(baseAngle + Math.PI / 2)
+          .setAlpha(0.9)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.particleLayer.add(flash);
+        this.tweens.add({
+          targets: flash,
+          scaleX: scale * 1.32,
+          scaleY: scale * 1.32,
+          alpha: 0,
+          duration: 120,
+          ease: "Quad.easeOut",
+          onComplete: () => flash.destroy()
+        });
+      }
+
+      spawnBullet(angle, volleyCount = 1) {
+        const isSolarVolley = volleyCount > 1;
+        const spawnDistance = volleyCount >= 16 ? CONFIG.player.size * 0.4 : CONFIG.player.size * 0.72;
+        const damageScale = this.getVolleyDamageScale(volleyCount);
+        const lifetimeScale = this.getVolleyLifetimeScale(volleyCount);
+        const x = this.player.x + Math.cos(angle) * spawnDistance;
+        const y = this.player.y + Math.sin(angle) * spawnDistance;
+        const glow = this.add.rectangle(
+          x - Math.cos(angle) * (isSolarVolley ? 12 : 10),
+          y - Math.sin(angle) * (isSolarVolley ? 12 : 10),
+          isSolarVolley ? 42 : 34,
+          isSolarVolley ? 12 : 8,
+          CONFIG.bullet.glowColor,
+          isSolarVolley ? 0.22 : 0.16
+        )
+          .setRotation(angle)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        const core = this.add.image(x, y, isSolarVolley ? "bulletSolar" : "bulletBasic")
+          .setDisplaySize(isSolarVolley ? (volleyCount >= 16 ? 36 : 40) : 44, isSolarVolley ? (volleyCount >= 16 ? 14 : 18) : 16)
+          .setRotation(angle)
+          .setAlpha(isSolarVolley ? 0.92 : 1)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.bulletLayer.add([glow, core]);
+
+        this.bullets.push({
+          x,
+          y,
+          vx: Math.cos(angle) * this.stats.bulletSpeed,
+          vy: Math.sin(angle) * this.stats.bulletSpeed,
+          life: (this.stats.bulletLifetime * lifetimeScale) / 1000,
+          damage: this.stats.bulletDamage * damageScale,
+          remainingPierce: this.stats.bulletPierce,
+          hitIds: new Set(),
+          core,
+          glow
+        });
+      }
+
+      updateSpawning(time) {
+        if (time < this.nextSpawnAt) {
+          return;
+        }
+        const interval = Math.max(
+          CONFIG.enemy.spawnIntervalMin,
+          CONFIG.enemy.baseSpawnInterval - (this.wave - 1) * 58
+        );
+        const batch = CONFIG.enemy.spawnBatchBase + Math.floor((this.wave - 1) / CONFIG.wave.batchGrowthEvery);
+
+        for (let i = 0; i < batch; i += 1) {
+          this.spawnEnemy();
+        }
+        this.nextSpawnAt = time + interval;
+      }
+
+      spawnEnemy() {
+        const margin = 46;
+        const side = Phaser.Math.Between(0, 3);
+        let x;
+        let y;
+
+        if (side === 0) {
+          x = Phaser.Math.Between(20, CONFIG.world.width - 20);
+          y = -margin;
+        } else if (side === 1) {
+          x = CONFIG.world.width + margin;
+          y = Phaser.Math.Between(20, CONFIG.world.height - 20);
+        } else if (side === 2) {
+          x = Phaser.Math.Between(20, CONFIG.world.width - 20);
+          y = CONFIG.world.height + margin;
+        } else {
+          x = -margin;
+          y = Phaser.Math.Between(20, CONFIG.world.height - 20);
+        }
+
+        const available = Object.values(CONFIG.enemy.variants).filter((variant) => variant.unlockWave <= this.wave);
+        const variant = this.pickEnemyVariant(available);
+        const hp = variant.hp * (1 + (this.wave - 1) * CONFIG.wave.hpGrowth);
+        const speed = variant.speed * (1 + (this.wave - 1) * CONFIG.wave.speedGrowth);
+        if (variant.name === "miniboss") {
+          this.spawnBossWarning(x, y);
+        }
+        const shape = this.createEnemyShape(variant, x, y);
+        this.enemyLayer.add(shape);
+
+        this.enemies.push({
+          id: this.enemyId++,
+          type: variant.name,
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          radius: variant.radius,
+          hp,
+          maxHp: hp,
+          speed,
+          xp: Math.round(variant.xp * (1 + (this.wave - 1) * 0.12)),
+          color: variant.color,
+          shape,
+          flashUntil: 0,
+          behavior: variant.behavior || "chase",
+          rotationSpeed: variant.rotationSpeed || (variant.name === "cutter" ? 4.4 : 1.5),
+          contactDamageMultiplier: variant.contactDamageMultiplier || 1,
+          moveSeed: Phaser.Math.FloatBetween(0, Math.PI * 2),
+          dashSpeedMultiplier: variant.dashSpeedMultiplier || 1,
+          dashDuration: variant.dashDuration || 0,
+          dashCooldownBase: variant.dashCooldown || 0,
+          dashCooldownRemaining: (variant.dashCooldown || 0) > 0
+            ? Phaser.Math.FloatBetween(0.4, (variant.dashCooldown || 0) + 0.5)
+            : 0,
+          dashTime: 0,
+          dashVector: { x: 0, y: 0 }
+        });
+      }
+
+      pickEnemyVariant(available) {
+        const totalWeight = available.reduce((sum, variant) => sum + (variant.weight || 1), 0);
+        let roll = Phaser.Math.FloatBetween(0, totalWeight);
+        for (const variant of available) {
+          roll -= variant.weight || 1;
+          if (roll <= 0) {
+            return variant;
+          }
+        }
+        return available[available.length - 1];
+      }
+
+      createEnemyShape(variant, x, y) {
+        if (variant.texture) {
+          return this.add.image(x, y, variant.texture)
+            .setDisplaySize(variant.displaySize, variant.displaySize);
+        }
+        if (variant.shape === "triangle") {
+          return this.add.triangle(x, y, 0, -variant.radius, variant.radius, variant.radius, -variant.radius, variant.radius, variant.color, 1)
+            .setStrokeStyle(2, 0xffffff, 0.16);
+        }
+        if (variant.shape === "diamond") {
+          return this.add.rectangle(x, y, variant.radius * 1.55, variant.radius * 1.55, variant.color, 1)
+            .setRotation(Math.PI / 4)
+            .setStrokeStyle(2, 0xffffff, 0.12);
+        }
+        return this.add.circle(x, y, variant.radius, variant.color, 1)
+          .setStrokeStyle(2, 0xffffff, 0.12);
+      }
+
+      spawnBossWarning(x, y) {
+        const markerX = clamp(x, 110, CONFIG.world.width - 110);
+        const markerY = clamp(y, 110, CONFIG.world.height - 110);
+        const marker = this.add.image(markerX, markerY, "bossWarningMarker")
+          .setDisplaySize(168, 168)
+          .setAlpha(0)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.particleLayer.add(marker);
+        this.tweens.add({
+          targets: marker,
+          alpha: 0.92,
+          scale: 1.18,
+          duration: 220,
+          yoyo: true,
+          repeat: 2,
+          ease: "Sine.easeInOut",
+          onComplete: () => {
+            this.tweens.add({
+              targets: marker,
+              alpha: 0,
+              scale: 1.65,
+              duration: 260,
+              ease: "Quad.easeOut",
+              onComplete: () => marker.destroy()
+            });
+          }
+        });
+      }
+
+      updateEnemies(dt) {
+        for (let i = this.enemies.length - 1; i >= 0; i -= 1) {
+          const enemy = this.enemies[i];
+          const toPlayer = normalize(this.player.x - enemy.x, this.player.y - enemy.y);
+          const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+          let steering = { x: toPlayer.x, y: toPlayer.y };
+          let accel = 4.5;
+          let drag = 4.5;
+          let maxSpeed = enemy.speed;
+
+          if (enemy.behavior === "weave") {
+            const lateral = { x: -toPlayer.y, y: toPlayer.x };
+            const wave = Math.sin(this.time.now * 0.009 + enemy.moveSeed) * 0.95;
+            steering = normalize(
+              toPlayer.x + lateral.x * wave,
+              toPlayer.y + lateral.y * wave
+            );
+            accel = 5.5;
+            maxSpeed *= 1.08;
+          } else if (enemy.behavior === "dash") {
+            enemy.dashCooldownRemaining -= dt;
+            if (enemy.dashTime > 0) {
+              enemy.dashTime -= dt;
+              steering = enemy.dashVector;
+              accel = 11.5;
+              drag = 2.35;
+              maxSpeed *= enemy.dashSpeedMultiplier;
+            } else if (enemy.dashCooldownRemaining <= 0 && dist < 360) {
+              enemy.dashTime = enemy.dashDuration;
+              enemy.dashCooldownRemaining = enemy.dashCooldownBase + Phaser.Math.FloatBetween(0.18, 0.72);
+              enemy.dashVector = { x: toPlayer.x, y: toPlayer.y };
+              steering = enemy.dashVector;
+              accel = 12;
+              drag = 2.2;
+              maxSpeed *= enemy.dashSpeedMultiplier;
+              this.spawnHitImpact(enemy.x, enemy.y);
+            }
+          }
+
+          enemy.vx += steering.x * enemy.speed * accel * dt;
+          enemy.vy += steering.y * enemy.speed * accel * dt;
+          enemy.vx *= Math.max(0, 1 - drag * dt);
+          enemy.vy *= Math.max(0, 1 - drag * dt);
+
+          const currentSpeed = Math.hypot(enemy.vx, enemy.vy);
+          if (currentSpeed > maxSpeed) {
+            enemy.vx *= maxSpeed / currentSpeed;
+            enemy.vy *= maxSpeed / currentSpeed;
+          }
+
+          enemy.x += enemy.vx * dt;
+          enemy.y += enemy.vy * dt;
+          enemy.shape.setPosition(enemy.x, enemy.y);
+          enemy.shape.rotation += dt * enemy.rotationSpeed;
+
+          if (this.time.now > enemy.flashUntil) {
+            if (enemy.shape.clearTint) {
+              enemy.shape.clearTint();
+            } else if (enemy.shape.setFillStyle) {
+              enemy.shape.setFillStyle(enemy.color, 1);
+            }
+          }
+
+          if (dist < enemy.radius + CONFIG.player.size * 0.62 && this.player.hurtCooldown <= 0) {
+            this.damagePlayer(CONFIG.enemy.contactDamage * enemy.contactDamageMultiplier);
+            const push = normalize(enemy.x - this.player.x, enemy.y - this.player.y);
+            enemy.vx += push.x * 190;
+            enemy.vy += push.y * 190;
+            this.player.hurtCooldown = 0.5;
+          }
+        }
+      }
+
+      updateBullets(dt) {
+        for (let i = this.bullets.length - 1; i >= 0; i -= 1) {
+          const bullet = this.bullets[i];
+          bullet.life -= dt;
+          bullet.x += bullet.vx * dt;
+          bullet.y += bullet.vy * dt;
+          bullet.core.setPosition(bullet.x, bullet.y);
+          const bulletAngle = Math.atan2(bullet.vy, bullet.vx);
+          bullet.glow.setPosition(bullet.x - Math.cos(bulletAngle) * 12, bullet.y - Math.sin(bulletAngle) * 12);
+
+          let shouldDestroy = bullet.life <= 0
+            || bullet.x < -60
+            || bullet.x > CONFIG.world.width + 60
+            || bullet.y < -60
+            || bullet.y > CONFIG.world.height + 60;
+
+          if (!shouldDestroy) {
+            for (let j = this.enemies.length - 1; j >= 0; j -= 1) {
+              const enemy = this.enemies[j];
+              if (bullet.hitIds.has(enemy.id)) {
+                continue;
+              }
+              const dist = Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y);
+              if (dist <= enemy.radius + 8) {
+                bullet.hitIds.add(enemy.id);
+                this.hitEnemy(enemy, bullet);
+                if (bullet.remainingPierce > 0) {
+                  bullet.remainingPierce -= 1;
+                } else {
+                  shouldDestroy = true;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (shouldDestroy) {
+            this.destroyBullet(i);
+          }
+        }
+      }
+
+      hitEnemy(enemy, bullet) {
+        enemy.hp -= bullet.damage;
+        const knock = normalize(enemy.x - this.player.x, enemy.y - this.player.y);
+        enemy.vx += knock.x * CONFIG.enemy.hitKnockback;
+        enemy.vy += knock.y * CONFIG.enemy.hitKnockback;
+        enemy.flashUntil = this.time.now + CONFIG.enemy.hitFlashDuration;
+        if (enemy.shape.setTintFill) {
+          enemy.shape.setTintFill(0xffffff);
+        } else if (enemy.shape.setTint) {
+          enemy.shape.setTint(0xffffff);
+        } else if (enemy.shape.setFillStyle) {
+          enemy.shape.setFillStyle(0xffffff, 1);
+        }
+        this.spawnHitImpact(enemy.x, enemy.y);
+        this.spawnFloatingText(enemy.x, enemy.y - enemy.radius, Math.round(bullet.damage).toString(), "#ffffff", 20);
+        soundSynth.playHit();
+
+        if (enemy.hp <= 0) {
+          this.killEnemy(enemy);
+        }
+      }
+
+      killEnemy(enemy) {
+        const index = this.enemies.indexOf(enemy);
+        if (index >= 0) {
+          this.enemies.splice(index, 1);
+        }
+        enemy.shape.destroy();
+        this.kills += 1;
+        this.spawnXpOrb(enemy.x, enemy.y, enemy.xp);
+        this.spawnFloatingText(enemy.x, enemy.y - 14, `+${enemy.xp} XP`, "#42ff99", 22);
+        this.spawnDeathExplosion(enemy.x, enemy.y, enemy.color);
+      }
+
+      destroyBullet(index) {
+        const bullet = this.bullets[index];
+        bullet.core.destroy();
+        bullet.glow.destroy();
+        this.bullets.splice(index, 1);
+      }
+
+      spawnXpOrb(x, y, value) {
+        const orb = this.add.image(x, y, "xpOrb")
+          .setDisplaySize(30, 30)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.orbLayer.add(orb);
+        this.orbs.push({
+          x,
+          y,
+          value,
+          body: orb,
+          size: 30,
+          pulse: Math.random() * Math.PI * 2
+        });
+      }
+
+      updateOrbs(dt) {
+        for (let i = this.orbs.length - 1; i >= 0; i -= 1) {
+          const orb = this.orbs[i];
+          const distance = Phaser.Math.Distance.Between(orb.x, orb.y, this.player.x, this.player.y);
+          if (distance < this.stats.pickupRange) {
+            const dir = normalize(this.player.x - orb.x, this.player.y - orb.y);
+            const speed = CONFIG.xp.orbAttractSpeed * (1.1 + (1 - distance / this.stats.pickupRange) * 1.7);
+            orb.x += dir.x * speed * dt;
+            orb.y += dir.y * speed * dt;
+          }
+
+          if (distance < CONFIG.player.size * 0.75) {
+            this.gainXp(orb.value);
+            orb.body.destroy();
+            this.orbs.splice(i, 1);
+            continue;
+          }
+
+          orb.pulse += dt * 8;
+          orb.body.setPosition(orb.x, orb.y);
+          const pulseScale = 1 + Math.sin(orb.pulse) * 0.11;
+          orb.body.setDisplaySize(orb.size * pulseScale, orb.size * pulseScale);
+        }
+      }
+
+      gainXp(baseValue) {
+        this.xp += Math.round(baseValue * this.stats.xpGainMultiplier);
+        while (this.xp >= this.xpNeed) {
+          this.xp -= this.xpNeed;
+          this.levelUp();
+          break;
+        }
+      }
+
+      levelUp() {
+        this.level += 1;
+        this.xpNeed = Math.round(this.xpNeed * CONFIG.xp.growth + 8);
+        soundSynth.playLevelUp();
+        this.emitUIState();
+        const choices = Phaser.Utils.Array.Shuffle(this.getAvailableLevelUpChoices()).slice(0, 3);
+        this.game.events.emit("level-up", {
+          level: this.level,
+          choices
+        });
+        this.scene.pause();
+      }
+
+      getAvailableLevelUpChoices() {
+        return CONFIG.buffs.filter((buff) => {
+          if (buff.id === "bullet_count" && this.stats.bulletCount >= 16) {
+            return false;
+          }
+          return true;
+        });
+      }
+
+      applyBuff(buffId) {
+        const buff = CONFIG.buffs.find((item) => item.id === buffId);
+        if (!buff || !this.scene.isPaused()) {
+          return;
+        }
+        buff.apply(this.stats, this);
+        this.selectedBuffs.push(buffId);
+        if (this.selectedBuffs.length >= 3) {
+          this.playerBody.setTexture("playerUpgraded");
+          this.playerBody.setDisplaySize(76, 76);
+          this.playerGlow.setRadius(44);
+        }
+        this.spawnFloatingText(this.player.x, this.player.y - 42, buff.name, "#47f7ff", 24);
+        this.scene.resume();
+        this.emitUIState();
+      }
+
+      spawnDeathExplosion(x, y, color) {
+        const burst = this.add.image(x, y, "enemyDeath")
+          .setDisplaySize(118, 118)
+          .setAlpha(0.95)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.particleLayer.add(burst);
+        this.tweens.add({
+          targets: burst,
+          scale: 1.45,
+          rotation: Phaser.Math.FloatBetween(-0.4, 0.4),
+          alpha: 0,
+          duration: 360,
+          ease: "Cubic.easeOut",
+          onComplete: () => burst.destroy()
+        });
+
+        for (let i = 0; i < CONFIG.feedback.deathParticles; i += 1) {
+          const angle = (Math.PI * 2 / CONFIG.feedback.deathParticles) * i + Phaser.Math.FloatBetween(-0.18, 0.18);
+          const speed = Phaser.Math.Between(90, 270);
+          const particle = this.add.circle(x, y, Phaser.Math.Between(2, 5), i % 3 === 0 ? 0x42ff99 : color, 1);
+          this.particleLayer.add(particle);
+          this.particles.push({
+            body: particle,
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: Phaser.Math.FloatBetween(0.32, 0.58),
+            maxLife: 0.58
+          });
+        }
+      }
+
+      spawnHitImpact(x, y) {
+        const impact = this.add.image(x, y, "hitImpact")
+          .setDisplaySize(54, 54)
+          .setAlpha(0.9)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.particleLayer.add(impact);
+        this.tweens.add({
+          targets: impact,
+          scale: 1.35,
+          rotation: Phaser.Math.FloatBetween(-0.35, 0.35),
+          alpha: 0,
+          duration: 180,
+          ease: "Quad.easeOut",
+          onComplete: () => impact.destroy()
+        });
+      }
+
+      updateParticles(dt) {
+        for (let i = this.particles.length - 1; i >= 0; i -= 1) {
+          const particle = this.particles[i];
+          particle.life -= dt;
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.vx *= Math.max(0, 1 - 3.2 * dt);
+          particle.vy *= Math.max(0, 1 - 3.2 * dt);
+          particle.body.setPosition(particle.x, particle.y);
+          particle.body.alpha = Math.max(0, particle.life / particle.maxLife);
+          if (particle.life <= 0) {
+            particle.body.destroy();
+            this.particles.splice(i, 1);
+          }
+        }
+      }
+
+      spawnFloatingText(x, y, text, color, size) {
+        const label = this.add.text(x, y, text, {
+          fontSize: `${size}px`,
+          fontStyle: "700",
+          color
+        }).setOrigin(0.5);
+        label.setStroke("#020711", 4);
+        this.textLayer.add(label);
+        this.tweens.add({
+          targets: label,
+          y: y - 40,
+          alpha: 0,
+          duration: 620,
+          ease: "Cubic.easeOut",
+          onComplete: () => label.destroy()
+        });
+      }
+
+      damagePlayer(amount) {
+        const actual = amount * (1 - this.stats.damageReduction);
+        this.player.hp -= actual;
+        this.playerBody.setTint(0xff3864);
+        this.playerGlow.setFillStyle(0xff3864, 0.22);
+        this.time.delayedCall(85, () => {
+          if (this.playerBody && this.playerBody.active) {
+            this.playerBody.clearTint();
+            this.playerGlow.setFillStyle(0x47f7ff, 0.15);
+          }
+        });
+        this.cameras.main.shake(90, 0.008);
+        this.game.events.emit("player-hit");
+        if (this.player.hp <= 0) {
+          this.endGame();
+        }
+      }
+
+      findNearestEnemy() {
+        let nearest = null;
+        let nearestDist = Number.POSITIVE_INFINITY;
+        for (const enemy of this.enemies) {
+          const dist = Phaser.Math.Distance.Squared(this.player.x, this.player.y, enemy.x, enemy.y);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearest = enemy;
+          }
+        }
+        return nearest;
+      }
+
+      emitUIState() {
+        this.game.events.emit("ui-update", {
+          hp: Math.max(0, this.player.hp),
+          maxHp: this.stats.maxHp,
+          xp: this.xp,
+          xpNeed: this.xpNeed,
+          level: this.level,
+          wave: this.wave,
+          kills: this.kills,
+          time: this.elapsed,
+          selectedBuffs: [...this.selectedBuffs]
+        });
+      }
+
+      endGame() {
+        if (this.isGameOver) {
+          return;
+        }
+        this.isGameOver = true;
+        this.game.events.off("buff-selected", this.applyBuff, this);
+        this.scene.stop("UIScene");
+        this.scene.start("GameOverScene", {
+          time: this.elapsed,
+          kills: this.kills,
+          level: this.level,
+          wave: this.wave
+        });
+      }
+    }
+
+    // =============================
+    // UI 叠加层
+    // =============================
+    class UIScene extends Phaser.Scene {
+      constructor() {
+        super("UIScene");
+      }
+
+      create() {
+        this.target = {
+          hp: CONFIG.player.maxHp,
+          maxHp: CONFIG.player.maxHp,
+          xp: 0,
+          xpNeed: CONFIG.xp.firstLevelNeed,
+          level: 1,
+          wave: 1,
+          kills: 0,
+          time: 0,
+          selectedBuffs: []
+        };
+        this.display = { hp: this.target.hp, xp: 0 };
+        this.buffMeta = Object.fromEntries(CONFIG.buffs.map((buff) => [buff.id, buff]));
+        this.pendingWaveWarning = null;
+
+        this.add.image(218, 72, "hudPanel")
+          .setDisplaySize(410, 96)
+          .setAlpha(0.92);
+        this.add.image(CONFIG.world.width - 126, 72, "hudPanel")
+          .setDisplaySize(248, 96)
+          .setAlpha(0.84);
+        this.barGraphics = this.add.graphics();
+        this.texts = {
+          hp: this.add.text(50, 32, "", { fontSize: "18px", color: "#ffffff", fontStyle: "700" }),
+          xp: this.add.text(50, 72, "", { fontSize: "16px", color: "#d5e7ff" }),
+          level: this.add.text(50, 104, "", { fontSize: "20px", color: "#47f7ff", fontStyle: "700" }),
+          right: this.add.text(CONFIG.world.width - 42, 34, "", {
+            fontSize: "18px",
+            color: "#d8e8ff",
+            align: "right",
+            lineSpacing: 8
+          }).setOrigin(1, 0)
+        };
+        this.buildPanel = this.add.container(CONFIG.world.width - 154, 286).setDepth(18);
+        this.buildPanel.add([
+          this.add.rectangle(0, 0, 250, 356, 0x08111f, 0.76)
+            .setStrokeStyle(1, 0x47f7ff, 0.26),
+          this.add.rectangle(0, -142, 214, 36, 0x0f1c32, 0.92)
+            .setStrokeStyle(1, 0x47f7ff, 0.2)
+        ]);
+        this.buildTitle = this.add.text(-96, -154, "已选强化", {
+          fontSize: "18px",
+          color: "#ffffff",
+          fontStyle: "700"
+        }).setOrigin(0, 0.5);
+        this.buildCount = this.add.text(96, -154, "0", {
+          fontSize: "16px",
+          color: "#89ffff",
+          fontStyle: "700"
+        }).setOrigin(1, 0.5);
+        this.buildItems = this.add.container(0, 18);
+        this.buildPanel.add([this.buildTitle, this.buildCount, this.buildItems]);
+        this.refreshBuildPanel();
+
+        this.hitVignette = this.add.rectangle(CONFIG.world.width / 2, CONFIG.world.height / 2, CONFIG.world.width, CONFIG.world.height, 0xff3864, 0)
+          .setDepth(20);
+        this.levelFlash = this.add.rectangle(CONFIG.world.width / 2, CONFIG.world.height / 2, CONFIG.world.width, CONFIG.world.height, 0xffffff, 0)
+          .setDepth(50);
+        this.waveLayer = this.add.container(0, 0).setDepth(52);
+        this.choiceLayer = this.add.container(0, 0).setDepth(60);
+
+        this.game.events.on("ui-update", this.onUIUpdate, this);
+        this.game.events.on("ui-reset", this.onUIReset, this);
+        this.game.events.on("level-up", this.showLevelUp, this);
+        this.game.events.on("player-hit", this.showPlayerHit, this);
+        this.game.events.on("wave-warning", this.showWaveWarning, this);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+          this.game.events.off("ui-update", this.onUIUpdate, this);
+          this.game.events.off("ui-reset", this.onUIReset, this);
+          this.game.events.off("level-up", this.showLevelUp, this);
+          this.game.events.off("player-hit", this.showPlayerHit, this);
+          this.game.events.off("wave-warning", this.showWaveWarning, this);
+        });
+      }
+
+      update() {
+        this.display.hp = Phaser.Math.Linear(this.display.hp, this.target.hp, CONFIG.ui.healthLerp);
+        this.display.xp = Phaser.Math.Linear(this.display.xp, this.target.xp, CONFIG.ui.xpLerp);
+        this.drawBars();
+        this.texts.hp.setText(`生命 ${Math.ceil(this.target.hp)} / ${Math.round(this.target.maxHp)}`);
+        this.texts.xp.setText(`经验 ${Math.floor(this.target.xp)} / ${this.target.xpNeed}`);
+        this.texts.level.setText(`等级 ${this.target.level}`);
+        this.texts.right.setText([
+          `波次 ${this.target.wave}`,
+          `击杀 ${this.target.kills}`,
+          `时间 ${formatTime(this.target.time)}`
+        ]);
+      }
+
+      onUIReset() {
+        this.target.hp = CONFIG.player.maxHp;
+        this.target.maxHp = CONFIG.player.maxHp;
+        this.target.xp = 0;
+        this.target.xpNeed = CONFIG.xp.firstLevelNeed;
+        this.target.level = 1;
+        this.target.wave = 1;
+        this.target.kills = 0;
+        this.target.time = 0;
+        this.target.selectedBuffs = [];
+        this.display.hp = this.target.hp;
+        this.display.xp = 0;
+        this.pendingWaveWarning = null;
+        this.buildPanel.setVisible(true);
+        this.waveLayer.removeAll(true);
+        this.choiceLayer.removeAll(true);
+        this.refreshBuildPanel();
+      }
+
+      onUIUpdate(data) {
+        Object.assign(this.target, data);
+        if (Object.hasOwn(data, "selectedBuffs")) {
+          this.refreshBuildPanel();
+        }
+      }
+
+      drawBars() {
+        const x = 48;
+        const y = 56;
+        const width = 330;
+        const height = 16;
+        const hpRatio = clamp(this.display.hp / this.target.maxHp, 0, 1);
+        const xpRatio = clamp(this.display.xp / this.target.xpNeed, 0, 1);
+
+        this.barGraphics.clear();
+        this.barGraphics.fillStyle(0x08111f, 0.92);
+        this.barGraphics.fillRoundedRect(x - 4, y - 4, width + 8, height + 8, 7);
+        this.barGraphics.fillStyle(0xff3864, 0.95);
+        this.barGraphics.fillRoundedRect(x, y, width * hpRatio, height, 5);
+        this.barGraphics.lineStyle(1, 0xff8fa6, 0.55);
+        this.barGraphics.strokeRoundedRect(x, y, width, height, 5);
+
+        this.barGraphics.fillStyle(0x08111f, 0.92);
+        this.barGraphics.fillRoundedRect(x - 4, y + 34, width + 8, height + 8, 7);
+        this.barGraphics.fillStyle(0x42ff99, 0.96);
+        this.barGraphics.fillRoundedRect(x, y + 38, width * xpRatio, height, 5);
+        this.barGraphics.lineStyle(1, 0x98ffd0, 0.5);
+        this.barGraphics.strokeRoundedRect(x, y + 38, width, height, 5);
+      }
+
+      refreshBuildPanel() {
+        this.buildItems.removeAll(true);
+        const selectedBuffs = this.target.selectedBuffs || [];
+        this.buildCount.setText(`${selectedBuffs.length}`);
+
+        if (selectedBuffs.length === 0) {
+          const empty = this.add.text(0, -18, "暂未装载强化", {
+            fontSize: "16px",
+            color: "#8aa3c7"
+          }).setOrigin(0.5);
+          const hint = this.add.text(0, 14, "升级后会在这里记录当前 build", {
+            fontSize: "13px",
+            color: "#5f789c",
+            align: "center"
+          }).setOrigin(0.5);
+          this.buildItems.add([empty, hint]);
+          return;
+        }
+
+        const visibleBuffs = selectedBuffs.slice(-6).reverse();
+        visibleBuffs.forEach((buffId, index) => {
+          const buff = this.buffMeta[buffId];
+          if (!buff) {
+            return;
+          }
+          const y = -102 + index * 48;
+          const row = this.add.rectangle(0, y, 214, 40, 0x10192a, 0.88)
+            .setStrokeStyle(1, buff.color, 0.35);
+          const icon = this.add.image(-82, y, buff.icon)
+            .setDisplaySize(28, 28);
+          const name = this.add.text(-58, y, buff.name, {
+            fontSize: "15px",
+            color: "#ffffff",
+            fontStyle: "700"
+          }).setOrigin(0, 0.5);
+          const category = this.add.text(88, y, buff.category, {
+            fontSize: "12px",
+            color: Phaser.Display.Color.IntegerToColor(buff.color).rgba,
+            fontStyle: "700"
+          }).setOrigin(1, 0.5);
+          this.buildItems.add([row, icon, name, category]);
+        });
+
+        if (selectedBuffs.length > visibleBuffs.length) {
+          const more = this.add.text(0, 148, `+${selectedBuffs.length - visibleBuffs.length} 项强化`, {
+            fontSize: "12px",
+            color: "#70cfff"
+          }).setOrigin(0.5);
+          this.buildItems.add(more);
+        }
+      }
+
+      showPlayerHit() {
+        this.hitVignette.setAlpha(0.22);
+        this.tweens.add({
+          targets: this.hitVignette,
+          alpha: 0,
+          duration: 190,
+          ease: "Cubic.easeOut"
+        });
+      }
+
+      showWaveWarning(payload) {
+        if (this.choiceLayer.list.length > 0) {
+          this.pendingWaveWarning = payload;
+          return;
+        }
+        this.presentWaveWarning(payload);
+      }
+
+      presentWaveWarning(payload) {
+        this.waveLayer.removeAll(true);
+        const group = this.add.container(CONFIG.world.width / 2, 156);
+        const banner = this.add.image(0, 0, "waveWarningBanner")
+          .setDisplaySize(740, 124)
+          .setAlpha(0.92);
+        const title = this.add.text(0, -8, `WAVE ${payload.wave}`, {
+          fontSize: "34px",
+          fontStyle: "700",
+          color: "#ffffff"
+        }).setOrigin(0.5).setStroke("#ff3864", 5);
+        const subtitle = this.add.text(0, 30, "噬码体强度上升", {
+          fontSize: "18px",
+          color: "#8ff6ff",
+          fontStyle: "700"
+        }).setOrigin(0.5);
+        group.add([banner, title, subtitle]);
+        group.setAlpha(0);
+        group.setY(122);
+        this.waveLayer.add(group);
+        this.tweens.add({
+          targets: group,
+          y: 156,
+          alpha: 1,
+          duration: 220,
+          ease: "Cubic.easeOut",
+          onComplete: () => {
+            this.time.delayedCall(900, () => {
+              this.tweens.add({
+                targets: group,
+                y: 126,
+                alpha: 0,
+                duration: 260,
+                ease: "Cubic.easeIn",
+                onComplete: () => group.destroy()
+              });
+            });
+          }
+        });
+      }
+
+      flushPendingWaveWarning(delay = 180) {
+        if (!this.pendingWaveWarning || this.choiceLayer.list.length > 0) {
+          return;
+        }
+        const payload = this.pendingWaveWarning;
+        this.pendingWaveWarning = null;
+        this.time.delayedCall(delay, () => {
+          if (this.choiceLayer.list.length === 0) {
+            this.presentWaveWarning(payload);
+          } else {
+            this.pendingWaveWarning = payload;
+          }
+        });
+      }
+
+      showLevelUp(payload) {
+        this.levelFlash.setAlpha(CONFIG.feedback.levelFlashAlpha);
+        this.tweens.add({
+          targets: this.levelFlash,
+          alpha: 0,
+          duration: 320,
+          ease: "Quad.easeOut"
+        });
+
+        this.buildPanel.setVisible(false);
+        this.waveLayer.removeAll(true);
+        this.choiceLayer.removeAll(true);
+        const dim = this.add.rectangle(CONFIG.world.width / 2, CONFIG.world.height / 2, CONFIG.world.width, CONFIG.world.height, 0x020611, 0.68);
+        const title = this.add.text(CONFIG.world.width / 2, 150, `等级 ${payload.level} · 选择一项强化`, {
+          fontSize: "34px",
+          fontStyle: "700",
+          color: "#ffffff"
+        }).setOrigin(0.5);
+        title.setStroke("#47f7ff", 4);
+
+        this.choiceLayer.add([dim, title]);
+        payload.choices.forEach((buff, index) => {
+          const card = this.createBuffCard(buff, 320 + index * 320, 392);
+          this.choiceLayer.add(card);
+        });
+      }
+
+      createBuffCard(buff, x, y) {
+        const group = this.add.container(x, y);
+        const rarity = this.getBuffRarity(buff);
+        const frameKey = {
+          common: "cardFrameCommon",
+          rare: "cardFrameRare",
+          epic: "cardFrameEpic"
+        }[rarity];
+        const bg = this.add.image(0, 0, frameKey)
+          .setDisplaySize(282, 424);
+        const hitArea = this.add.rectangle(0, 0, 282, 424, 0x000000, 0.001)
+          .setInteractive({ useHandCursor: true });
+        const category = this.add.text(0, -146, buff.category, {
+          fontSize: "18px",
+          color: Phaser.Display.Color.IntegerToColor(buff.color).rgba,
+          fontStyle: "700"
+        }).setOrigin(0.5);
+        const icon = buff.icon
+          ? this.add.image(0, -78, buff.icon).setDisplaySize(82, 82)
+          : this.add.circle(0, -78, 28, buff.color, 0.92).setStrokeStyle(2, 0xffffff, 0.42);
+        const name = this.add.text(0, -12, buff.name, {
+          fontSize: "28px",
+          color: "#ffffff",
+          fontStyle: "700"
+        }).setOrigin(0.5);
+        const desc = this.add.text(0, 58, buff.desc, {
+          fontSize: "21px",
+          color: "#c8d7ef",
+          align: "center",
+          wordWrap: { width: 210 }
+        }).setOrigin(0.5);
+        const rarityText = {
+          common: "COMMON",
+          rare: "RARE",
+          epic: "EPIC"
+        }[rarity];
+        const rarityLabel = this.add.text(0, 134, rarityText, {
+          fontSize: "15px",
+          color: rarity === "epic" ? "#ffe48a" : rarity === "rare" ? "#d694ff" : "#89ffff",
+          fontStyle: "700"
+        }).setOrigin(0.5);
+        group.add([bg, category, name, desc, rarityLabel, icon, hitArea]);
+
+        const choose = () => {
+          this.buildPanel.setVisible(true);
+          this.choiceLayer.removeAll(true);
+          this.game.events.emit("buff-selected", buff.id);
+          this.flushPendingWaveWarning();
+        };
+        hitArea.on("pointerover", () => {
+          group.setScale(1.045);
+          const iconScaleX = icon.scaleX;
+          const iconScaleY = icon.scaleY;
+          this.tweens.add({
+            targets: icon,
+            scaleX: iconScaleX * 1.1,
+            scaleY: iconScaleY * 1.1,
+            duration: 120,
+            yoyo: true
+          });
+        });
+        hitArea.on("pointerout", () => {
+          group.setScale(1);
+        });
+        hitArea.on("pointerdown", choose);
+        return group;
+      }
+
+      getBuffRarity(buff) {
+        if (["bullet_count", "pierce"].includes(buff.id)) {
+          return "epic";
+        }
+        if (["attack_speed", "damage_reduce", "xp_gain", "pickup_range"].includes(buff.id)) {
+          return "rare";
+        }
+        return "common";
+      }
+    }
+
+    // =============================
+    // 结算界面
+    // =============================
+    class GameOverScene extends Phaser.Scene {
+      constructor() {
+        super("GameOverScene");
+      }
+
+      init(data) {
+        this.result = data;
+      }
+
+      create() {
+        musicDirector.bind(this);
+        musicDirector.playLoop("bgmMenu", { fadeDuration: 900, volume: 0.34 });
+        this.add.image(CONFIG.world.width / 2, CONFIG.world.height / 2, "arenaBg")
+          .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
+          .setAlpha(0.32)
+          .setTint(0xff3864);
+        this.grid = this.add.graphics();
+        this.drawBackground();
+        this.add.image(CONFIG.world.width / 2, 372, "gameOverPanel")
+          .setDisplaySize(500, 562)
+          .setAlpha(0.64);
+        this.add.rectangle(CONFIG.world.width / 2, 330, 420, 292, 0x06111f, 0.84)
+          .setStrokeStyle(1, 0x47f7ff, 0.34);
+
+        this.add.text(CONFIG.world.width / 2, 150, "信号中断", {
+          fontSize: "66px",
+          fontStyle: "700",
+          color: "#ffffff"
+        }).setOrigin(0.5).setStroke("#ff3864", 6);
+
+        const statsText = [
+          `存活时长  ${formatTime(this.result.time)}`,
+          `击杀总数  ${this.result.kills}`,
+          `最高等级  ${this.result.level}`,
+          `抵达波次  ${this.result.wave}`
+        ];
+        this.add.text(CONFIG.world.width / 2, 300, statsText, {
+          fontSize: "28px",
+          color: "#dbeafe",
+          align: "center",
+          lineSpacing: 18
+        }).setOrigin(0.5);
+
+        const button = this.add.rectangle(CONFIG.world.width / 2, 510, 270, 68, 0x26101b, 0.96)
+          .setStrokeStyle(2, CONFIG.ui.neonRed, 1)
+          .setInteractive({ useHandCursor: true });
+        const buttonText = this.add.text(button.x, button.y, "重新开始", {
+          fontSize: "28px",
+          fontStyle: "700",
+          color: "#ffffff"
+        }).setOrigin(0.5);
+
+        button.on("pointerover", () => {
+          button.setFillStyle(0x3a1526, 1);
+          button.setScale(1.035);
+          buttonText.setScale(1.035);
+        });
+        button.on("pointerout", () => {
+          button.setFillStyle(0x26101b, 0.96);
+          button.setScale(1);
+          buttonText.setScale(1);
+        });
+        button.on("pointerdown", () => {
+          soundSynth.ensureContext();
+          musicDirector.resumeAudio();
+          this.scene.start("GameScene");
+        });
+      }
+
+      drawBackground() {
+        this.grid.fillStyle(CONFIG.world.background, 0.58);
+        this.grid.fillRect(0, 0, CONFIG.world.width, CONFIG.world.height);
+        this.grid.lineStyle(1, 0x462034, 0.32);
+        for (let x = 0; x <= CONFIG.world.width; x += CONFIG.world.gridSize) {
+          this.grid.lineBetween(x, 0, x, CONFIG.world.height);
+        }
+        for (let y = 0; y <= CONFIG.world.height; y += CONFIG.world.gridSize) {
+          this.grid.lineBetween(0, y, CONFIG.world.width, y);
+        }
+      }
+    }
+
+    const phaserConfig = {
+      type: Phaser.AUTO,
+      parent: "game-root",
+      width: CONFIG.world.width,
+      height: CONFIG.world.height,
+      backgroundColor: "#070a14",
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      },
+      render: {
+        antialias: true,
+        pixelArt: false
+      },
+      scene: [StartScene, GameScene, UIScene, GameOverScene]
+    };
+
+    window.addEventListener("load", () => {
+      window.neonSurvivorGame = new Phaser.Game(phaserConfig);
+    });
+  </script>
+</body>
+</html>
