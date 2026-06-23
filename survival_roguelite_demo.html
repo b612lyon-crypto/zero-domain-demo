@@ -204,6 +204,22 @@
         deathParticles: 18,
         levelFlashAlpha: 0.72
       },
+      artillery: {
+        offerTime: 105,
+        minEnemiesToFire: 2,
+        baseInterval: 5600,
+        warningDuration: 980,
+        shellFallDuration: 520,
+        shellSpawnHeight: 240,
+        baseDamage: 88,
+        baseRadius: 118,
+        burnDuration: 3.8,
+        burnTickInterval: 0.45,
+        burnDamagePerTick: 16,
+        shellCount: 1,
+        maxShellCount: 4,
+        shellSpread: 82
+      },
       buffs: [
         {
           id: "damage",
@@ -299,6 +315,44 @@
           color: 0xf472b6,
           icon: "buffIconPickupRange",
           apply(stats) { stats.pickupRange *= 1.5; }
+        }
+        },
+        {
+          id: "artillery_unlock",
+          category: "鏀诲嚮",
+          name: "杞ㄩ亾鐐嚮",
+          desc: "瑙ｉ攣鍓鍣細鑷姩绛夌瀛愮偖鍑�",
+          color: 0xff6b6b,
+          icon: "buffIconArtilleryUnlock",
+          apply(stats, scene) {
+            scene.unlockArtillery();
+          }
+        },
+        {
+          id: "shell_salvo",
+          category: "鏀诲嚮",
+          name: "鐐箷榻愬皠",
+          desc: "姣忔鐐嚮澧炲姞 1 鏋氱瓑瀛愮偖寮�",
+          color: 0xff7f50,
+          icon: "buffIconShellSalvo",
+          apply(stats, scene) {
+            scene.artillery.shellCount = Math.min(scene.artillery.shellCount + 1, CONFIG.artillery.maxShellCount);
+          }
+        },
+        {
+          id: "blast_radius",
+          category: "鏀诲嚮",
+          name: "瑁傚煙鎵╃垎",
+          desc: "鐖嗙偢鑼冨洿涓庣伡鐑т綔鐢ㄦ墿澶�",
+          color: 0xffa94d,
+          icon: "buffIconBlastRadius",
+          apply(stats, scene) {
+            scene.artillery.radius *= 1.18;
+            scene.artillery.damage *= 1.12;
+            scene.artillery.burnRadius *= 1.16;
+            scene.artillery.burnDamage *= 1.12;
+            scene.artillery.burnDuration += 0.55;
+          }
         }
       ]
     };
