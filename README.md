@@ -1,5 +1,6 @@
 # ZERO DOMAIN Demo
 
-Public playable preview for the current `ZERO DOMAIN` build.
+Public playable preview for the current ZERO DOMAIN build.
 
-Open the site through GitHub Pages after deployment is enabled.
+Main entry:
+- https://b612lyon-crypto.github.io/zero-domain-demo/
