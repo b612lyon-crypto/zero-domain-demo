@@ -51,9 +51,9 @@
         moveSpeed: 250,
         acceleration: 2200,
         drag: 8.5,
-        attackInterval: 480,
+        attackInterval: 420,
         bulletSpeed: 650,
-        bulletDamage: 26,
+        bulletDamage: 33,
         bulletLifetime: 1100,
         bulletCount: 1,
         bulletPierce: 0,
@@ -173,11 +173,70 @@
             hp: 280,
             speed: 48,
             xp: 72,
-            unlockWave: 6,
-            weight: 0.35
+            unlockWave: 999,
+            weight: 0
           }
         }
       },
+      run: {
+        victoryTime: 480
+      },
+      bosses: [
+        {
+          id: "warden",
+          name: "Phase Boss I",
+          title: "2:00  节点守卫",
+          texture: "enemyBlackMiniboss",
+          tint: 0x77f7ff,
+          color: 0x77f7ff,
+          radius: 48,
+          displaySize: 118,
+          hp: 920,
+          speed: 48,
+          xp: 140,
+          spawnAt: 120,
+          behavior: "boss_chase",
+          rotationSpeed: 1.1,
+          contactDamageMultiplier: 1.55
+        },
+        {
+          id: "oracle",
+          name: "Phase Boss II",
+          title: "4:00  棱镜先知",
+          texture: "enemyBlueElite",
+          tint: 0xff75ff,
+          color: 0xff75ff,
+          radius: 52,
+          displaySize: 132,
+          hp: 1680,
+          speed: 62,
+          xp: 220,
+          spawnAt: 240,
+          behavior: "boss_weave",
+          rotationSpeed: 1.8,
+          contactDamageMultiplier: 1.8
+        },
+        {
+          id: "reaper",
+          name: "Phase Boss III",
+          title: "6:00  赤环收割者",
+          texture: "enemyPurple",
+          tint: 0xff4f7b,
+          color: 0xff4f7b,
+          radius: 58,
+          displaySize: 148,
+          hp: 2850,
+          speed: 76,
+          xp: 320,
+          spawnAt: 360,
+          behavior: "boss_dash",
+          rotationSpeed: 2.4,
+          contactDamageMultiplier: 2.1,
+          dashSpeedMultiplier: 2.6,
+          dashDuration: 0.46,
+          dashCooldown: 3.25
+        }
+      ],
       wave: {
         duration: 22,
         hpGrowth: 0.2,
@@ -185,8 +244,8 @@
         batchGrowthEvery: 2
       },
       xp: {
-        firstLevelNeed: 24,
-        growth: 1.25,
+        firstLevelNeed: 20,
+        growth: 1.18,
         orbRadius: 7,
         orbAttractSpeed: 360,
         gainMultiplier: 1
@@ -201,23 +260,23 @@
       },
       feedback: {
         screenShake: 0.004,
-        deathParticles: 18,
+        deathParticles: 10,
         levelFlashAlpha: 0.72
       },
       artillery: {
         offerTime: 105,
         minEnemiesToFire: 2,
-        baseInterval: 5600,
+        baseInterval: 6400,
         warningDuration: 980,
         shellFallDuration: 520,
         shellSpawnHeight: 240,
-        baseDamage: 88,
-        baseRadius: 118,
-        burnDuration: 3.8,
-        burnTickInterval: 0.45,
-        burnDamagePerTick: 16,
+        baseDamage: 56,
+        baseRadius: 96,
+        burnDuration: 2.4,
+        burnTickInterval: 0.55,
+        burnDamagePerTick: 7,
         shellCount: 1,
-        maxShellCount: 4,
+        maxShellCount: 3,
         shellSpread: 82
       },
       buffs: [
@@ -225,25 +284,25 @@
           id: "damage",
           category: "攻击",
           name: "高能弹头",
-          desc: "子弹伤害 +20%",
+          desc: "子弹伤害 +25%",
           color: 0xff4f7b,
           icon: "buffIconDamage",
-          apply(stats) { stats.bulletDamage *= 1.2; }
+          apply(stats) { stats.bulletDamage *= 1.25; }
         },
         {
           id: "attack_speed",
           category: "攻击",
           name: "急速协议",
-          desc: "攻击速度 +15%",
+          desc: "攻击间隔 -20%",
           color: 0xffd166,
           icon: "buffIconAttackSpeed",
-          apply(stats) { stats.attackInterval *= 0.85; }
+          apply(stats) { stats.attackInterval *= 0.8; }
         },
         {
           id: "bullet_count",
           category: "攻击",
-          name: "扇形散射",
-          desc: "子弹数量 +1",
+          name: "Solar Bloom",
+          desc: "弹幕数量翻倍，光芒造成针刺伤害",
           color: 0x67e8f9,
           icon: "buffIconSolarBloom",
           apply(stats) { stats.bulletCount = Math.min(stats.bulletCount * 2, 16); }
@@ -252,7 +311,7 @@
           id: "pierce",
           category: "攻击",
           name: "穿甲链路",
-          desc: "子弹穿透 +1",
+          desc: "子弹额外穿透 1 名敌人",
           color: 0xa78bfa,
           icon: "buffIconPierce",
           apply(stats) { stats.bulletPierce += 1; }
@@ -261,7 +320,7 @@
           id: "max_hp",
           category: "生存",
           name: "生命扩容",
-          desc: "最大生命值 +30",
+          desc: "最大生命值 +30，并立即恢复 30",
           color: 0x42ff99,
           icon: "buffIconMaxHp",
           apply(stats, scene) {
@@ -273,7 +332,7 @@
           id: "regen",
           category: "生存",
           name: "纳米修复",
-          desc: "每秒生命恢复 +1",
+          desc: "每秒恢复 1 点生命",
           color: 0x2dd4bf,
           icon: "buffIconRegen",
           apply(stats) { stats.regenPerSecond += 1; }
@@ -291,7 +350,7 @@
           id: "damage_reduce",
           category: "生存",
           name: "偏转护盾",
-          desc: "受击伤害减免 20%",
+          desc: "受到的伤害降低 20%",
           color: 0x60a5fa,
           icon: "buffIconDamageReduce",
           apply(stats) {
@@ -310,18 +369,17 @@
         {
           id: "pickup_range",
           category: "功能",
-          name: "磁吸立场",
-          desc: "拾取范围 +50%",
+          name: "磁吸场",
+          desc: "经验球吸附范围 +50%",
           color: 0xf472b6,
           icon: "buffIconPickupRange",
           apply(stats) { stats.pickupRange *= 1.5; }
-        }
         },
         {
           id: "artillery_unlock",
-          category: "鏀诲嚮",
-          name: "杞ㄩ亾鐐嚮",
-          desc: "瑙ｉ攣鍓鍣細鑷姩绛夌瀛愮偖鍑�",
+          category: "攻击",
+          name: "轨道炮阵",
+          desc: "解锁自动炮击副武器",
           color: 0xff6b6b,
           icon: "buffIconArtilleryUnlock",
           apply(stats, scene) {
@@ -330,9 +388,9 @@
         },
         {
           id: "shell_salvo",
-          category: "鏀诲嚮",
-          name: "鐐箷榻愬皠",
-          desc: "姣忔鐐嚮澧炲姞 1 鏋氱瓑瀛愮偖寮�",
+          category: "攻击",
+          name: "炮弹齐射",
+          desc: "每轮炮击额外落下 1 枚炮弹",
           color: 0xff7f50,
           icon: "buffIconShellSalvo",
           apply(stats, scene) {
@@ -341,27 +399,21 @@
         },
         {
           id: "blast_radius",
-          category: "鏀诲嚮",
-          name: "瑁傚煙鎵╃垎",
-          desc: "鐖嗙偢鑼冨洿涓庣伡鐑т綔鐢ㄦ墿澶�",
+          category: "攻击",
+          name: "爆域扩张",
+          desc: "扩大炮击爆炸和灼烧范围",
           color: 0xffa94d,
           icon: "buffIconBlastRadius",
           apply(stats, scene) {
-            scene.artillery.radius *= 1.18;
-            scene.artillery.damage *= 1.12;
-            scene.artillery.burnRadius *= 1.16;
-            scene.artillery.burnDamage *= 1.12;
-            scene.artillery.burnDuration += 0.55;
+            scene.artillery.radius *= 1.1;
+            scene.artillery.damage *= 1.05;
+            scene.artillery.burnRadius *= 1.08;
+            scene.artillery.burnDamage *= 1.06;
+            scene.artillery.burnDuration += 0.25;
           }
         }
       ]
     };
-
-    const bulletCountBuff = CONFIG.buffs.find((buff) => buff.id === "bullet_count");
-    if (bulletCountBuff) {
-      bulletCountBuff.name = "太阳绽放";
-      bulletCountBuff.desc = "弹幕数量 x2，最终形成日冕散射";
-    }
 
     const ASSETS = {
       arenaBg: "assets/zero-domain/battle_arena_background_v2_clean.png",
@@ -395,8 +447,18 @@
       buffIconDamageReduce: "assets/zero-domain/ui/icons/buff_icon_damage_reduce.png",
       buffIconXpGain: "assets/zero-domain/ui/icons/buff_icon_xp_gain.png",
       buffIconPickupRange: "assets/zero-domain/ui/icons/buff_icon_pickup_range.png",
+      buffIconArtilleryUnlock: "assets/zero-domain/buff_icon_artillery_unlock_clean.png",
+      buffIconShellSalvo: "assets/zero-domain/buff_icon_shell_salvo_clean.png",
+      buffIconBlastRadius: "assets/zero-domain/buff_icon_blast_radius_clean.png",
       waveWarningBanner: "assets/zero-domain/ui/wave_warning_banner.png",
-      bossWarningMarker: "assets/zero-domain/ui/boss_warning_marker.png"
+      bossWarningMarker: "assets/zero-domain/ui/boss_warning_marker.png",
+      artilleryShell: "assets/zero-domain/shell_plasma_mortar_v1_clean.png",
+      artilleryTargetReticle: "assets/zero-domain/vfx_artillery_target_reticle_v1_clean.png",
+      artilleryExplosionCore: "assets/zero-domain/vfx_artillery_explosion_core_v1_clean.png",
+      artilleryShockwave: "assets/zero-domain/vfx_artillery_shockwave_ring_v1_clean.png",
+      artilleryBurnField: "assets/zero-domain/vfx_artillery_burn_field_v1_clean.png",
+      buildPanelFrame: "assets/zero-domain/ui/build_panel_frame_v2_clean.png",
+      levelupFlashOverlay: "assets/zero-domain/ui/levelup_flash_overlay_v2_clean.png"
     };
 
     const AUDIO_ASSETS = {
@@ -406,71 +468,58 @@
       bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
     };
 
+    const DEMO_BUILD = "zero-domain-20260626-boss-victory-balance";
+    window.ZERO_DOMAIN_BUILD = DEMO_BUILD;
+    console.info(`[ZERO DOMAIN] build ${DEMO_BUILD}`);
+
+    function safePlaySound(scene, key, config = {}) {
+      try {
+        if (scene && scene.cache && scene.cache.audio && scene.cache.audio.exists(key)) {
+          scene.sound.play(key, config);
+          return true;
+        }
+      } catch (error) {
+        console.warn(`Failed to play sound ${key}`, error);
+      }
+      return false;
+    }
+
     // =============================
-    // Web Audio API 合成音效
+    // Web Audio API ??????
     // =============================
     class SoundSynth {
       constructor() {
         this.context = null;
-        this.enabled = true;
+        this.enabled = false;
+        this.lastArtilleryImpactAt = 0;
       }
 
       ensureContext() {
-        if (!this.context) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.context = new AudioContext();
-        }
-        if (this.context.state === "suspended") {
-          this.context.resume();
-        }
+        return;
       }
 
-      playShoot() {
-        this.ensureContext();
-        const now = this.context.currentTime;
-        const osc = this.context.createOscillator();
-        const gain = this.context.createGain();
-        osc.type = "square";
-        osc.frequency.setValueAtTime(740, now);
-        osc.frequency.exponentialRampToValueAtTime(260, now + 0.055);
-        gain.gain.setValueAtTime(0.055, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-        osc.connect(gain).connect(this.context.destination);
-        osc.start(now);
-        osc.stop(now + 0.075);
+      playShoot(scene) {
+        return;
       }
 
-      playHit() {
-        this.ensureContext();
-        const now = this.context.currentTime;
-        const osc = this.context.createOscillator();
-        const gain = this.context.createGain();
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.linearRampToValueAtTime(95, now + 0.08);
-        gain.gain.setValueAtTime(0.07, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-        osc.connect(gain).connect(this.context.destination);
-        osc.start(now);
-        osc.stop(now + 0.13);
+      playHit(scene) {
+        return;
       }
 
-      playLevelUp() {
-        this.ensureContext();
-        const now = this.context.currentTime;
-        [523, 659, 784].forEach((freq, index) => {
-          const osc = this.context.createOscillator();
-          const gain = this.context.createGain();
-          const start = now + index * 0.075;
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(freq, start);
-          gain.gain.setValueAtTime(0.001, start);
-          gain.gain.exponentialRampToValueAtTime(0.11, start + 0.018);
-          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
-          osc.connect(gain).connect(this.context.destination);
-          osc.start(start);
-          osc.stop(start + 0.2);
-        });
+      playLevelUp(scene) {
+        return;
+      }
+
+      playLowHp(scene) {
+        return;
+      }
+
+      playArtilleryLaunch(scene) {
+        return;
+      }
+
+      playArtilleryImpact(scene) {
+        return;
       }
     }
 
@@ -480,11 +529,13 @@
         this.currentKey = null;
         this.currentTrack = null;
         this.tracks = new Map();
+        this.playlist = [];
+        this.playlistIndex = 0;
         this.trackConfig = {
           bgmMenu: { volume: 0.42, loop: true },
-          bgmCombatPhase1: { volume: 0.36, loop: true },
-          bgmCombatPhase2: { volume: 0.4, loop: true },
-          bgmRedAlert: { volume: 0.44, loop: true }
+          bgmCombatPhase1: { volume: 0.30, loop: false },
+          bgmCombatPhase2: { volume: 0.32, loop: false },
+          bgmRedAlert: { volume: 0.34, loop: false }
         };
       }
 
@@ -502,6 +553,7 @@
           loop: config.loop,
           volume: 0
         });
+        track.on("complete", () => this.handleTrackComplete(key));
         this.tracks.set(key, track);
         return track;
       }
@@ -523,6 +575,7 @@
         if (!this.scene) {
           return;
         }
+        this.playlist = [];
 
         const targetTrack = this.ensureTrack(key);
         if (!targetTrack) {
@@ -532,7 +585,7 @@
         this.resumeAudio();
         const config = this.trackConfig[key] || { volume: 0.35, loop: true };
         const targetVolume = options.volume ?? config.volume;
-        const fadeDuration = options.fadeDuration ?? 900;
+        const fadeDuration = options.fadeDuration ?? 260;
 
         if (this.currentTrack === targetTrack && targetTrack.isPlaying) {
           if (this.scene.tweens) {
@@ -545,6 +598,12 @@
         }
 
         targetTrack.setLoop(config.loop);
+        for (const [otherKey, track] of this.tracks.entries()) {
+          if (otherKey !== key && track.isPlaying) {
+            track.stop();
+            track.setVolume(0);
+          }
+        }
         if (!targetTrack.isPlaying) {
           targetTrack.play({ loop: config.loop, volume: 0 });
         } else {
@@ -580,6 +639,54 @@
 
         this.currentKey = key;
         this.currentTrack = targetTrack;
+      }
+
+      playSequence(keys) {
+        if (!this.scene || keys.length === 0) {
+          return;
+        }
+        const sameList = keys.length === this.playlist.length
+          && keys.every((key, index) => key === this.playlist[index]);
+        if (sameList && this.currentTrack && this.currentTrack.isPlaying) {
+          return;
+        }
+        this.playlist = [...keys];
+        this.playlistIndex = 0;
+        this.playPlaylistIndex(0);
+      }
+
+      playPlaylistIndex(index) {
+        if (!this.scene || this.playlist.length === 0) {
+          return;
+        }
+        this.playlistIndex = index % this.playlist.length;
+        const key = this.playlist[this.playlistIndex];
+        const targetTrack = this.ensureTrack(key);
+        if (!targetTrack) {
+          return;
+        }
+        this.resumeAudio();
+        for (const track of this.tracks.values()) {
+          if (track !== targetTrack && track.isPlaying) {
+            track.stop();
+          }
+          if (track !== targetTrack) {
+            track.setVolume(0);
+          }
+        }
+        const config = this.trackConfig[key] || { volume: 0.32, loop: false };
+        targetTrack.setLoop(false);
+        targetTrack.stop();
+        targetTrack.play({ loop: false, volume: config.volume });
+        this.currentKey = key;
+        this.currentTrack = targetTrack;
+      }
+
+      handleTrackComplete(key) {
+        if (this.playlist.length === 0 || key !== this.currentKey) {
+          return;
+        }
+        this.playPlaylistIndex(this.playlistIndex + 1);
       }
 
       stopAll(fadeDuration = 420) {
@@ -788,7 +895,10 @@
         this.wave = 1;
         this.lastWave = 1;
         this.nextShotAt = 0;
+        this.nextSolarBloomAt = 0;
         this.nextSpawnAt = 0;
+        this.nextBossIndex = 0;
+        this.defeatedBosses = 0;
         this.enemyId = 1;
         this.isGameOver = false;
         this.musicTier = null;
@@ -799,6 +909,19 @@
         this.particles = [];
         this.floaters = [];
         this.selectedBuffs = [];
+        this.artilleryFields = [];
+        this.solarPulses = [];
+        this.lowHpAlarmAt = 0;
+        this.artillery = {
+          unlocked: false,
+          nextShotAt: Number.POSITIVE_INFINITY,
+          shellCount: CONFIG.artillery.shellCount,
+          radius: CONFIG.artillery.baseRadius,
+          damage: CONFIG.artillery.baseDamage,
+          burnRadius: CONFIG.artillery.baseRadius * 0.74,
+          burnDamage: CONFIG.artillery.burnDamagePerTick,
+          burnDuration: CONFIG.artillery.burnDuration
+        };
 
         this.keys = this.input.keyboard.addKeys({
           up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -811,6 +934,7 @@
           .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
           .setAlpha(0.86);
         this.background = this.add.graphics();
+        this.hazardLayer = this.add.container();
         this.enemyLayer = this.add.container();
         this.orbLayer = this.add.container();
         this.bulletLayer = this.add.container();
@@ -829,7 +953,7 @@
         this.playerLayer.add([this.pickupRing, this.playerGlow, this.playerBody, this.playerAim]);
 
         musicDirector.bind(this);
-        musicDirector.playLoop("bgmCombatPhase1", { fadeDuration: 700 });
+        musicDirector.playSequence(["bgmCombatPhase1", "bgmCombatPhase2", "bgmRedAlert"]);
         this.drawArenaBackground();
         this.scene.launch("UIScene");
         this.game.events.emit("ui-reset");
@@ -847,8 +971,13 @@
 
         const dt = Math.min(delta / 1000, 0.034);
         this.elapsed += dt;
+        if (this.elapsed >= CONFIG.run.victoryTime) {
+          this.endGame("victory");
+          return;
+        }
         this.wave = Math.floor(this.elapsed / CONFIG.wave.duration) + 1;
         this.updateMusicState();
+        this.updateBossSchedule();
         if (this.wave !== this.lastWave) {
           this.lastWave = this.wave;
           this.game.events.emit("wave-warning", { wave: this.wave });
@@ -861,6 +990,9 @@
         this.updateSpawning(time);
         this.updateEnemies(dt);
         this.updateBullets(dt);
+        this.updateSolarPulses(dt);
+        this.updateArtillery(time, dt);
+        this.updateArtilleryFields(dt);
         this.updateOrbs(dt);
         this.updateParticles(dt);
 
@@ -872,18 +1004,7 @@
       }
 
       updateMusicState(force = false) {
-        let nextTier = "bgmCombatPhase1";
-        if (this.wave >= 7 || this.elapsed >= 150) {
-          nextTier = "bgmRedAlert";
-        } else if (this.wave >= 4 || this.elapsed >= 72) {
-          nextTier = "bgmCombatPhase2";
-        }
-
-        if (!force && this.musicTier === nextTier) {
-          return;
-        }
-        this.musicTier = nextTier;
-        musicDirector.playLoop(nextTier, { fadeDuration: nextTier === "bgmRedAlert" ? 1200 : 900 });
+        return;
       }
 
       drawArenaBackground() {
@@ -969,8 +1090,9 @@
 
         const baseAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
         const volleyAngles = this.getVolleyAngles(baseAngle);
-        if (volleyAngles.length > 1) {
+        if (volleyAngles.length > 1 && time >= this.nextSolarBloomAt) {
           this.spawnSunburstMuzzle(baseAngle, volleyAngles.length);
+          this.nextSolarBloomAt = time + 5000;
         }
 
         for (const angle of volleyAngles) {
@@ -979,8 +1101,8 @@
 
         this.player.vx -= Math.cos(baseAngle) * this.stats.recoil;
         this.player.vy -= Math.sin(baseAngle) * this.stats.recoil;
-        this.cameras.main.shake(55, CONFIG.feedback.screenShake);
-        soundSynth.playShoot();
+        this.cameras.main.shake(35, CONFIG.feedback.screenShake * 0.65);
+        soundSynth.playShoot(this);
         this.nextShotAt = time + Math.max(90, this.stats.attackInterval);
       }
 
@@ -990,7 +1112,7 @@
           return [baseAngle];
         }
         if (count >= 16) {
-          const spinOffset = (this.time.now * 0.0022) % (Math.PI * 2);
+          const spinOffset = (this.time.now * 0.00085) % (Math.PI * 2);
           return Array.from({ length: count }, (_, index) =>
             baseAngle + spinOffset + (Math.PI * 2 * index) / count
           );
@@ -1004,29 +1126,29 @@
 
       getVolleyDamageScale(volleyCount) {
         if (volleyCount >= 16) {
-          return 0.28;
+          return 0.34;
         }
         if (volleyCount >= 8) {
-          return 0.44;
+          return 0.5;
         }
         if (volleyCount >= 4) {
-          return 0.62;
+          return 0.7;
         }
         if (volleyCount >= 2) {
-          return 0.82;
+          return 0.9;
         }
         return 1;
       }
 
       getVolleyLifetimeScale(volleyCount) {
         if (volleyCount >= 16) {
-          return 0.58;
+          return 0.68;
         }
         if (volleyCount >= 8) {
-          return 0.72;
+          return 0.8;
         }
         if (volleyCount >= 4) {
-          return 0.84;
+          return 0.9;
         }
         return 1;
       }
@@ -1035,22 +1157,73 @@
         const distance = volleyCount >= 16 ? 0 : CONFIG.player.size * 0.78;
         const x = this.player.x + Math.cos(baseAngle) * distance;
         const y = this.player.y + Math.sin(baseAngle) * distance;
-        const scale = volleyCount >= 16 ? 0.24 : 0.13 + volleyCount * 0.018;
+        const scale = volleyCount >= 16 ? 0.14 : 0.08 + volleyCount * 0.01;
         const flash = this.add.image(x, y, "sunburstMuzzle")
           .setScale(scale)
           .setRotation(baseAngle + Math.PI / 2)
-          .setAlpha(0.9)
+          .setAlpha(0.30)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(flash);
         this.tweens.add({
           targets: flash,
-          scaleX: scale * 1.32,
-          scaleY: scale * 1.32,
+          scaleX: scale * 1.08,
+          scaleY: scale * 1.08,
           alpha: 0,
-          duration: 120,
+          duration: 520,
           ease: "Quad.easeOut",
           onComplete: () => flash.destroy()
         });
+        this.solarPulses.push({
+          x: this.player.x,
+          y: this.player.y,
+          angles: this.getVolleyAngles(baseAngle),
+          radius: volleyCount >= 16 ? 260 : 130 + volleyCount * 16,
+          width: volleyCount >= 16 ? 20 : 14,
+          damage: this.stats.bulletDamage * (volleyCount >= 16 ? 1.35 : volleyCount >= 8 ? 1.15 : 0.95),
+          life: 0.42,
+          hitIds: new Set()
+        });
+      }
+
+      updateSolarPulses(dt) {
+        for (let i = this.solarPulses.length - 1; i >= 0; i -= 1) {
+          const pulse = this.solarPulses[i];
+          pulse.life -= dt;
+          if (pulse.life <= 0) {
+            this.solarPulses.splice(i, 1);
+            continue;
+          }
+          for (const enemy of [...this.enemies]) {
+            if (pulse.hitIds.has(enemy.id)) {
+              continue;
+            }
+            for (const angle of pulse.angles) {
+              const endX = pulse.x + Math.cos(angle) * pulse.radius;
+              const endY = pulse.y + Math.sin(angle) * pulse.radius;
+              const dist = this.distanceToSegment(enemy.x, enemy.y, pulse.x, pulse.y, endX, endY);
+              if (dist <= enemy.radius + pulse.width) {
+                pulse.hitIds.add(enemy.id);
+                this.applyDamageToEnemy(enemy, pulse.damage, pulse.x, pulse.y, {
+                  knockback: 18,
+                  spawnImpact: false,
+                  floatingText: false,
+                  playSound: false
+                });
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      distanceToSegment(px, py, ax, ay, bx, by) {
+        const abx = bx - ax;
+        const aby = by - ay;
+        const lengthSq = abx * abx + aby * aby || 1;
+        const t = clamp(((px - ax) * abx + (py - ay) * aby) / lengthSq, 0, 1);
+        const closestX = ax + abx * t;
+        const closestY = ay + aby * t;
+        return Phaser.Math.Distance.Between(px, py, closestX, closestY);
       }
 
       spawnBullet(angle, volleyCount = 1) {
@@ -1091,6 +1264,325 @@
         });
       }
 
+      getAttackCadenceMultiplier() {
+        return clamp(this.stats.attackInterval / CONFIG.player.attackInterval, 0.38, 1.35);
+      }
+
+      getArtilleryCooldown() {
+        return Math.max(2600, CONFIG.artillery.baseInterval * this.getAttackCadenceMultiplier());
+      }
+
+      getVisualIntensity() {
+        return this.elapsed >= 180 ? 0.58 : 0.82;
+      }
+
+      unlockArtillery() {
+        if (this.artillery.unlocked) {
+          return;
+        }
+        this.artillery.unlocked = true;
+        this.artillery.nextShotAt = this.time.now + 1400;
+        this.spawnFloatingText(this.player.x, this.player.y - 72, "Orbital Array Online", "#ff8fa8", 22);
+      }
+
+      updateArtillery(time, dt) {
+        if (!this.artillery.unlocked) {
+          return;
+        }
+        if (this.enemies.length < CONFIG.artillery.minEnemiesToFire) {
+          return;
+        }
+        if (time < this.artillery.nextShotAt) {
+          return;
+        }
+        this.startArtilleryBarrage(time);
+      }
+
+      startArtilleryBarrage(time) {
+        const targets = this.getArtilleryTargetPoints();
+        if (targets.length === 0) {
+          this.artillery.nextShotAt = time + 650;
+          return;
+        }
+        targets.forEach((target, index) => this.queueArtilleryStrike(target.x, target.y, index * 120));
+        this.artillery.nextShotAt = time + this.getArtilleryCooldown();
+      }
+
+      getArtilleryTargetPoints() {
+        if (this.enemies.length === 0) {
+          return [];
+        }
+
+        const ranked = [...this.enemies]
+          .map((enemy) => ({ enemy, score: this.scoreArtilleryTarget(enemy) }))
+          .sort((a, b) => b.score - a.score);
+        const focus = ranked[0]?.enemy;
+        if (!focus) {
+          return [];
+        }
+
+        const spread = Math.max(26, this.artillery.radius * 0.38);
+        const offsets = [
+          { x: 0, y: 0 },
+          { x: -0.62, y: -0.18 },
+          { x: 0.54, y: 0.12 },
+          { x: 0.08, y: 0.68 }
+        ];
+
+        return offsets.slice(0, this.artillery.shellCount).map((offset, index) => ({
+          x: clamp(focus.x + offset.x * spread + Phaser.Math.Between(-10, 10), 84, CONFIG.world.width - 84),
+          y: clamp(focus.y + offset.y * spread + Phaser.Math.Between(-10, 10), 84, CONFIG.world.height - 84)
+        }));
+      }
+
+      scoreArtilleryTarget(enemy) {
+        let nearbyCount = 0;
+        let hpWeight = enemy.hp * 0.08;
+        for (const other of this.enemies) {
+          const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, other.x, other.y);
+          if (dist <= this.artillery.radius * 1.35) {
+            nearbyCount += 1;
+            hpWeight += other.hp * 0.04;
+          }
+        }
+        const minibossBonus = enemy.isBoss || enemy.type === "miniboss" ? 32 : 0;
+        const playerProximity = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y) * 0.018;
+        return nearbyCount * 22 + hpWeight + minibossBonus - playerProximity;
+      }
+
+      queueArtilleryStrike(x, y, delayMs = 0) {
+        this.time.delayedCall(delayMs, () => {
+          if (this.isGameOver || !this.artillery.unlocked) {
+            return;
+          }
+
+          const warningDuration = CONFIG.artillery.warningDuration;
+          const fallDuration = CONFIG.artillery.shellFallDuration;
+          const reticle = this.add.image(x, y, "artilleryTargetReticle")
+            .setDisplaySize(this.artillery.radius * 2.05, this.artillery.radius * 2.05)
+            .setAlpha(0)
+            .setBlendMode(Phaser.BlendModes.ADD)
+            .setScale(0.72);
+          this.hazardLayer.add(reticle);
+
+          this.tweens.add({
+            targets: reticle,
+            alpha: 0.72,
+            scaleX: 1.02,
+            scaleY: 1.02,
+            duration: 160,
+            ease: "Cubic.easeOut",
+            yoyo: true,
+            repeat: 4
+          });
+
+          const shellLaunchDelay = Math.max(40, warningDuration - fallDuration);
+          this.time.delayedCall(shellLaunchDelay, () => {
+            if (!this.isGameOver) {
+              this.spawnArtilleryShell(x, y, fallDuration);
+            }
+          });
+
+          this.time.delayedCall(warningDuration, () => {
+            if (reticle.active) {
+              reticle.destroy();
+            }
+            if (!this.isGameOver) {
+              this.resolveArtilleryImpact(x, y);
+            }
+          });
+        });
+      }
+
+      spawnArtilleryShell(x, y, travelMs) {
+        const shell = this.add.image(x - 138, y - CONFIG.artillery.shellSpawnHeight, "artilleryShell")
+          .setScale(0.16)
+          .setRotation(-Math.PI / 3)
+          .setAlpha(0.96)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.particleLayer.add(shell);
+        soundSynth.playArtilleryLaunch(this);
+        this.tweens.add({
+          targets: shell,
+          x,
+          y,
+          scaleX: 0.22,
+          scaleY: 0.22,
+          rotation: 0.65,
+          duration: travelMs,
+          ease: "Quad.easeIn",
+          onComplete: () => shell.destroy()
+        });
+      }
+
+      resolveArtilleryImpact(x, y) {
+        const intensity = this.getVisualIntensity();
+        const core = this.add.image(x, y, "artilleryExplosionCore")
+          .setDisplaySize(this.artillery.radius * 1.88, this.artillery.radius * 1.88)
+          .setAlpha(0.56 * intensity)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        const shockwave = this.add.image(x, y, "artilleryShockwave")
+          .setDisplaySize(this.artillery.radius * 1.92, this.artillery.radius * 1.92)
+          .setAlpha(0.44 * intensity)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setScale(0.78);
+        this.particleLayer.add([core, shockwave]);
+        this.spawnBurnField(x, y);
+        this.spawnHitImpact(x, y);
+        soundSynth.playArtilleryImpact(this);
+        this.cameras.main.shake(120, 0.0048);
+
+        this.tweens.add({
+          targets: core,
+          alpha: 0,
+          scaleX: 1.28,
+          scaleY: 1.28,
+          rotation: Phaser.Math.FloatBetween(-0.12, 0.12),
+          duration: 260,
+          ease: "Cubic.easeOut",
+          onComplete: () => core.destroy()
+        });
+        this.tweens.add({
+          targets: shockwave,
+          alpha: 0,
+          scaleX: 1.26,
+          scaleY: 1.26,
+          duration: 320,
+          ease: "Quad.easeOut",
+          onComplete: () => shockwave.destroy()
+        });
+
+        for (const enemy of [...this.enemies]) {
+          const dist = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+          if (dist > this.artillery.radius + enemy.radius * 0.35) {
+            continue;
+          }
+          const edgeFalloff = 1 - clamp(dist / this.artillery.radius, 0, 1) * 0.4;
+          this.applyDamageToEnemy(enemy, this.artillery.damage * edgeFalloff, x, y, {
+            knockback: 210,
+            spawnImpact: false,
+            playSound: false,
+            textColor: "#9ffcff",
+            textSize: 18
+          });
+        }
+      }
+
+      spawnBurnField(x, y) {
+        const intensity = this.getVisualIntensity();
+        const burn = this.add.image(x, y, "artilleryBurnField")
+          .setDisplaySize(this.artillery.burnRadius * 1.86, this.artillery.burnRadius * 1.86)
+          .setAlpha(0.24 * intensity);
+        this.hazardLayer.add(burn);
+        this.artilleryFields.push({
+          x,
+          y,
+          radius: this.artillery.burnRadius,
+          damage: this.artillery.burnDamage,
+          life: this.artillery.burnDuration,
+          tick: 0,
+          sprite: burn
+        });
+      }
+
+      updateArtilleryFields(dt) {
+        for (let i = this.artilleryFields.length - 1; i >= 0; i -= 1) {
+          const field = this.artilleryFields[i];
+          field.life -= dt;
+          field.tick -= dt;
+          field.sprite.alpha = (0.06 + Math.max(0, field.life / this.artillery.burnDuration) * 0.16) * this.getVisualIntensity();
+          field.sprite.rotation += dt * 0.14;
+          field.sprite.setScale(1 + Math.sin(this.time.now * 0.003 + i) * 0.018);
+
+          if (field.tick <= 0) {
+            field.tick = CONFIG.artillery.burnTickInterval;
+            for (const enemy of [...this.enemies]) {
+              const dist = Phaser.Math.Distance.Between(field.x, field.y, enemy.x, enemy.y);
+              if (dist <= field.radius + enemy.radius * 0.25) {
+                this.applyDamageToEnemy(enemy, field.damage, field.x, field.y, {
+                  knockback: 24,
+                  spawnImpact: false,
+                  floatingText: false,
+                  playSound: false,
+                  textColor: "#ffb3c7",
+                  textSize: 14
+                });
+              }
+            }
+          }
+
+          if (field.life <= 0) {
+            field.sprite.destroy();
+            this.artilleryFields.splice(i, 1);
+          }
+        }
+      }
+
+      updateBossSchedule() {
+        while (
+          this.nextBossIndex < CONFIG.bosses.length
+          && this.elapsed >= CONFIG.bosses[this.nextBossIndex].spawnAt
+        ) {
+          this.spawnPhaseBoss(CONFIG.bosses[this.nextBossIndex], this.nextBossIndex + 1);
+          this.nextBossIndex += 1;
+        }
+      }
+
+      spawnPhaseBoss(boss, phase) {
+        const margin = 86;
+        const side = phase % 4;
+        const x = side === 1
+          ? CONFIG.world.width + margin
+          : side === 3
+            ? -margin
+            : Phaser.Math.Between(160, CONFIG.world.width - 160);
+        const y = side === 0
+          ? -margin
+          : side === 2
+            ? CONFIG.world.height + margin
+            : Phaser.Math.Between(120, CONFIG.world.height - 120);
+
+        this.spawnBossWarning(x, y);
+        this.game.events.emit("wave-warning", {
+          wave: `BOSS ${phase}`,
+          title: boss.title,
+          subtitle: "阶段性 Boss 已进入战场"
+        });
+
+        const shape = this.createEnemyShape(boss, x, y);
+        this.enemyLayer.add(shape);
+        this.enemies.push({
+          id: this.enemyId++,
+          type: boss.id,
+          bossPhase: phase,
+          isBoss: true,
+          x,
+          y,
+          vx: 0,
+          vy: 0,
+          radius: boss.radius,
+          hp: boss.hp,
+          maxHp: boss.hp,
+          speed: boss.speed,
+          xp: boss.xp,
+          color: boss.color,
+          baseTint: boss.tint || null,
+          shape,
+          flashUntil: 0,
+          behavior: boss.behavior || "boss_chase",
+          rotationSpeed: boss.rotationSpeed || 1.4,
+          contactDamageMultiplier: boss.contactDamageMultiplier || 1.8,
+          moveSeed: Phaser.Math.FloatBetween(0, Math.PI * 2),
+          dashSpeedMultiplier: boss.dashSpeedMultiplier || 1,
+          dashDuration: boss.dashDuration || 0,
+          dashCooldownBase: boss.dashCooldown || 0,
+          dashCooldownRemaining: (boss.dashCooldown || 0) > 0 ? boss.dashCooldown : 0,
+          dashTime: 0,
+          dashVector: { x: 0, y: 0 }
+        });
+        this.spawnFloatingText(CONFIG.world.width / 2, 116, boss.title, "#ff8fa8", 28);
+      }
+
       updateSpawning(time) {
         if (time < this.nextSpawnAt) {
           return;
@@ -1099,12 +1591,13 @@
           CONFIG.enemy.spawnIntervalMin,
           CONFIG.enemy.baseSpawnInterval - (this.wave - 1) * 58
         );
+        const earlyPressure = this.elapsed < 120 ? 0.75 : 1;
         const batch = CONFIG.enemy.spawnBatchBase + Math.floor((this.wave - 1) / CONFIG.wave.batchGrowthEvery);
 
         for (let i = 0; i < batch; i += 1) {
           this.spawnEnemy();
         }
-        this.nextSpawnAt = time + interval;
+        this.nextSpawnAt = time + interval / earlyPressure;
       }
 
       spawnEnemy() {
@@ -1127,7 +1620,9 @@
           y = Phaser.Math.Between(20, CONFIG.world.height - 20);
         }
 
-        const available = Object.values(CONFIG.enemy.variants).filter((variant) => variant.unlockWave <= this.wave);
+        const available = Object.values(CONFIG.enemy.variants).filter((variant) =>
+          variant.unlockWave <= this.wave && (variant.weight || 0) > 0
+        );
         const variant = this.pickEnemyVariant(available);
         const hp = variant.hp * (1 + (this.wave - 1) * CONFIG.wave.hpGrowth);
         const speed = variant.speed * (1 + (this.wave - 1) * CONFIG.wave.speedGrowth);
@@ -1150,6 +1645,7 @@
           speed,
           xp: Math.round(variant.xp * (1 + (this.wave - 1) * 0.12)),
           color: variant.color,
+          baseTint: variant.tint || null,
           shape,
           flashUntil: 0,
           behavior: variant.behavior || "chase",
@@ -1181,8 +1677,12 @@
 
       createEnemyShape(variant, x, y) {
         if (variant.texture) {
-          return this.add.image(x, y, variant.texture)
+          const sprite = this.add.image(x, y, variant.texture)
             .setDisplaySize(variant.displaySize, variant.displaySize);
+          if (variant.tint) {
+            sprite.setTint(variant.tint);
+          }
+          return sprite;
         }
         if (variant.shape === "triangle") {
           return this.add.triangle(x, y, 0, -variant.radius, variant.radius, variant.radius, -variant.radius, variant.radius, variant.color, 1)
@@ -1236,16 +1736,16 @@
           let drag = 4.5;
           let maxSpeed = enemy.speed;
 
-          if (enemy.behavior === "weave") {
+          if (enemy.behavior === "weave" || enemy.behavior === "boss_weave") {
             const lateral = { x: -toPlayer.y, y: toPlayer.x };
-            const wave = Math.sin(this.time.now * 0.009 + enemy.moveSeed) * 0.95;
+            const wave = Math.sin(this.time.now * (enemy.isBoss ? 0.0048 : 0.009) + enemy.moveSeed) * (enemy.isBoss ? 1.35 : 0.95);
             steering = normalize(
               toPlayer.x + lateral.x * wave,
               toPlayer.y + lateral.y * wave
             );
-            accel = 5.5;
-            maxSpeed *= 1.08;
-          } else if (enemy.behavior === "dash") {
+            accel = enemy.isBoss ? 4.2 : 5.5;
+            maxSpeed *= enemy.isBoss ? 0.96 : 1.08;
+          } else if (enemy.behavior === "dash" || enemy.behavior === "boss_dash") {
             enemy.dashCooldownRemaining -= dt;
             if (enemy.dashTime > 0) {
               enemy.dashTime -= dt;
@@ -1253,7 +1753,7 @@
               accel = 11.5;
               drag = 2.35;
               maxSpeed *= enemy.dashSpeedMultiplier;
-            } else if (enemy.dashCooldownRemaining <= 0 && dist < 360) {
+            } else if (enemy.dashCooldownRemaining <= 0 && dist < (enemy.isBoss ? 460 : 360)) {
               enemy.dashTime = enemy.dashDuration;
               enemy.dashCooldownRemaining = enemy.dashCooldownBase + Phaser.Math.FloatBetween(0.18, 0.72);
               enemy.dashVector = { x: toPlayer.x, y: toPlayer.y };
@@ -1261,7 +1761,9 @@
               accel = 12;
               drag = 2.2;
               maxSpeed *= enemy.dashSpeedMultiplier;
-              this.spawnHitImpact(enemy.x, enemy.y);
+              if (!enemy.isBoss || this.elapsed < 180 || Phaser.Math.Between(0, 1) === 0) {
+                this.spawnHitImpact(enemy.x, enemy.y);
+              }
             }
           }
 
@@ -1282,7 +1784,9 @@
           enemy.shape.rotation += dt * enemy.rotationSpeed;
 
           if (this.time.now > enemy.flashUntil) {
-            if (enemy.shape.clearTint) {
+            if (enemy.baseTint && enemy.shape.setTint) {
+              enemy.shape.setTint(enemy.baseTint);
+            } else if (enemy.shape.clearTint) {
               enemy.shape.clearTint();
             } else if (enemy.shape.setFillStyle) {
               enemy.shape.setFillStyle(enemy.color, 1);
@@ -1341,11 +1845,14 @@
         }
       }
 
-      hitEnemy(enemy, bullet) {
-        enemy.hp -= bullet.damage;
-        const knock = normalize(enemy.x - this.player.x, enemy.y - this.player.y);
-        enemy.vx += knock.x * CONFIG.enemy.hitKnockback;
-        enemy.vy += knock.y * CONFIG.enemy.hitKnockback;
+      applyDamageToEnemy(enemy, damage, sourceX, sourceY, options = {}) {
+        if (!enemy || !enemy.shape || !enemy.shape.active) {
+          return;
+        }
+        enemy.hp -= damage;
+        const knock = normalize(enemy.x - sourceX, enemy.y - sourceY);
+        enemy.vx += knock.x * (options.knockback ?? CONFIG.enemy.hitKnockback);
+        enemy.vy += knock.y * (options.knockback ?? CONFIG.enemy.hitKnockback);
         enemy.flashUntil = this.time.now + CONFIG.enemy.hitFlashDuration;
         if (enemy.shape.setTintFill) {
           enemy.shape.setTintFill(0xffffff);
@@ -1354,13 +1861,35 @@
         } else if (enemy.shape.setFillStyle) {
           enemy.shape.setFillStyle(0xffffff, 1);
         }
-        this.spawnHitImpact(enemy.x, enemy.y);
-        this.spawnFloatingText(enemy.x, enemy.y - enemy.radius, Math.round(bullet.damage).toString(), "#ffffff", 20);
-        soundSynth.playHit();
-
+        if (options.spawnImpact !== false) {
+          this.spawnHitImpact(enemy.x, enemy.y);
+        }
+        if (options.floatingText !== false) {
+          this.spawnFloatingText(
+            enemy.x,
+            enemy.y - enemy.radius,
+            Math.round(damage).toString(),
+            options.textColor || "#ffffff",
+            options.textSize || 20
+          );
+        }
+        if (options.playSound) {
+          soundSynth.playHit(this);
+        }
         if (enemy.hp <= 0) {
           this.killEnemy(enemy);
         }
+      }
+
+      hitEnemy(enemy, bullet) {
+        this.applyDamageToEnemy(enemy, bullet.damage, this.player.x, this.player.y, {
+          knockback: CONFIG.enemy.hitKnockback,
+          spawnImpact: true,
+          floatingText: true,
+          playSound: true,
+          textColor: "#ffffff",
+          textSize: 20
+        });
       }
 
       killEnemy(enemy) {
@@ -1370,6 +1899,11 @@
         }
         enemy.shape.destroy();
         this.kills += 1;
+        if (enemy.isBoss) {
+          this.defeatedBosses += 1;
+          this.spawnFloatingText(CONFIG.world.width / 2, 136, `BOSS ${enemy.bossPhase} DOWN`, "#ffe48a", 30);
+          this.cameras.main.flash(180, 255, 228, 138, false);
+        }
         this.spawnXpOrb(enemy.x, enemy.y, enemy.xp);
         this.spawnFloatingText(enemy.x, enemy.y - 14, `+${enemy.xp} XP`, "#42ff99", 22);
         this.spawnDeathExplosion(enemy.x, enemy.y, enemy.color);
@@ -1434,7 +1968,7 @@
       levelUp() {
         this.level += 1;
         this.xpNeed = Math.round(this.xpNeed * CONFIG.xp.growth + 8);
-        soundSynth.playLevelUp();
+        soundSynth.playLevelUp(this);
         this.emitUIState();
         const choices = Phaser.Utils.Array.Shuffle(this.getAvailableLevelUpChoices()).slice(0, 3);
         this.game.events.emit("level-up", {
@@ -1444,10 +1978,24 @@
         this.scene.pause();
       }
 
+      getBuffPickCount(buffId) {
+        return this.selectedBuffs.filter((id) => id === buffId).length;
+      }
+
       getAvailableLevelUpChoices() {
         return CONFIG.buffs.filter((buff) => {
+          const pickCount = this.getBuffPickCount(buff.id);
           if (buff.id === "bullet_count" && this.stats.bulletCount >= 16) {
             return false;
+          }
+          if (buff.id === "artillery_unlock") {
+            return !this.artillery.unlocked && this.elapsed >= CONFIG.artillery.offerTime;
+          }
+          if (buff.id === "shell_salvo") {
+            return this.artillery.unlocked && this.artillery.shellCount < CONFIG.artillery.maxShellCount;
+          }
+          if (buff.id === "blast_radius") {
+            return this.artillery.unlocked && pickCount < 3;
           }
           return true;
         });
@@ -1465,15 +2013,19 @@
           this.playerBody.setDisplaySize(76, 76);
           this.playerGlow.setRadius(44);
         }
+        if (buffId === "artillery_unlock") {
+          this.cameras.main.flash(220, 255, 128, 164, false);
+        }
         this.spawnFloatingText(this.player.x, this.player.y - 42, buff.name, "#47f7ff", 24);
         this.scene.resume();
         this.emitUIState();
       }
 
       spawnDeathExplosion(x, y, color) {
+        const intensity = this.getVisualIntensity();
         const burst = this.add.image(x, y, "enemyDeath")
-          .setDisplaySize(118, 118)
-          .setAlpha(0.95)
+          .setDisplaySize(92, 92)
+          .setAlpha(0.58 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(burst);
         this.tweens.add({
@@ -1486,8 +2038,9 @@
           onComplete: () => burst.destroy()
         });
 
-        for (let i = 0; i < CONFIG.feedback.deathParticles; i += 1) {
-          const angle = (Math.PI * 2 / CONFIG.feedback.deathParticles) * i + Phaser.Math.FloatBetween(-0.18, 0.18);
+        const particleCount = this.elapsed >= 180 ? Math.max(4, Math.floor(CONFIG.feedback.deathParticles * 0.55)) : CONFIG.feedback.deathParticles;
+        for (let i = 0; i < particleCount; i += 1) {
+          const angle = (Math.PI * 2 / particleCount) * i + Phaser.Math.FloatBetween(-0.18, 0.18);
           const speed = Phaser.Math.Between(90, 270);
           const particle = this.add.circle(x, y, Phaser.Math.Between(2, 5), i % 3 === 0 ? 0x42ff99 : color, 1);
           this.particleLayer.add(particle);
@@ -1505,8 +2058,8 @@
 
       spawnHitImpact(x, y) {
         const impact = this.add.image(x, y, "hitImpact")
-          .setDisplaySize(54, 54)
-          .setAlpha(0.9)
+          .setDisplaySize(42, 42)
+          .setAlpha(0.54 * this.getVisualIntensity())
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(impact);
         this.tweens.add({
@@ -1514,7 +2067,7 @@
           scale: 1.35,
           rotation: Phaser.Math.FloatBetween(-0.35, 0.35),
           alpha: 0,
-          duration: 180,
+          duration: 140,
           ease: "Quad.easeOut",
           onComplete: () => impact.destroy()
         });
@@ -1566,10 +2119,14 @@
             this.playerGlow.setFillStyle(0x47f7ff, 0.15);
           }
         });
+        if (this.player.hp / this.stats.maxHp <= 0.34 && this.time.now >= this.lowHpAlarmAt) {
+          soundSynth.playLowHp(this);
+          this.lowHpAlarmAt = this.time.now + 5800;
+        }
         this.cameras.main.shake(90, 0.008);
         this.game.events.emit("player-hit");
         if (this.player.hp <= 0) {
-          this.endGame();
+          this.endGame("defeat");
         }
       }
 
@@ -1600,7 +2157,7 @@
         });
       }
 
-      endGame() {
+      endGame(outcome = "defeat") {
         if (this.isGameOver) {
           return;
         }
@@ -1608,10 +2165,12 @@
         this.game.events.off("buff-selected", this.applyBuff, this);
         this.scene.stop("UIScene");
         this.scene.start("GameOverScene", {
+          outcome,
           time: this.elapsed,
           kills: this.kills,
           level: this.level,
-          wave: this.wave
+          wave: this.wave,
+          bosses: this.defeatedBosses
         });
       }
     }
@@ -1658,30 +2217,14 @@
             lineSpacing: 8
           }).setOrigin(1, 0)
         };
-        this.buildPanel = this.add.container(CONFIG.world.width - 154, 286).setDepth(18);
-        this.buildPanel.add([
-          this.add.rectangle(0, 0, 250, 356, 0x08111f, 0.76)
-            .setStrokeStyle(1, 0x47f7ff, 0.26),
-          this.add.rectangle(0, -142, 214, 36, 0x0f1c32, 0.92)
-            .setStrokeStyle(1, 0x47f7ff, 0.2)
-        ]);
-        this.buildTitle = this.add.text(-96, -154, "已选强化", {
-          fontSize: "18px",
-          color: "#ffffff",
-          fontStyle: "700"
-        }).setOrigin(0, 0.5);
-        this.buildCount = this.add.text(96, -154, "0", {
-          fontSize: "16px",
-          color: "#89ffff",
-          fontStyle: "700"
-        }).setOrigin(1, 0.5);
-        this.buildItems = this.add.container(0, 18);
-        this.buildPanel.add([this.buildTitle, this.buildCount, this.buildItems]);
-        this.refreshBuildPanel();
+        this.buildPanel = { setVisible() {} };
 
         this.hitVignette = this.add.rectangle(CONFIG.world.width / 2, CONFIG.world.height / 2, CONFIG.world.width, CONFIG.world.height, 0xff3864, 0)
           .setDepth(20);
-        this.levelFlash = this.add.rectangle(CONFIG.world.width / 2, CONFIG.world.height / 2, CONFIG.world.width, CONFIG.world.height, 0xffffff, 0)
+        this.levelFlash = this.add.image(CONFIG.world.width / 2, CONFIG.world.height / 2, "levelupFlashOverlay")
+          .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
+          .setAlpha(0)
+          .setBlendMode(Phaser.BlendModes.ADD)
           .setDepth(50);
         this.waveLayer = this.add.container(0, 0).setDepth(52);
         this.choiceLayer = this.add.container(0, 0).setDepth(60);
@@ -1728,7 +2271,7 @@
         this.display.hp = this.target.hp;
         this.display.xp = 0;
         this.pendingWaveWarning = null;
-        this.buildPanel.setVisible(true);
+        this.buildPanel.setVisible(false);
         this.waveLayer.removeAll(true);
         this.choiceLayer.removeAll(true);
         this.refreshBuildPanel();
@@ -1766,16 +2309,17 @@
       }
 
       refreshBuildPanel() {
+        return;
         this.buildItems.removeAll(true);
         const selectedBuffs = this.target.selectedBuffs || [];
         this.buildCount.setText(`${selectedBuffs.length}`);
 
         if (selectedBuffs.length === 0) {
-          const empty = this.add.text(0, -18, "暂未装载强化", {
+          const empty = this.add.text(0, -18, "No upgrades yet", {
             fontSize: "16px",
             color: "#8aa3c7"
           }).setOrigin(0.5);
-          const hint = this.add.text(0, 14, "升级后会在这里记录当前 build", {
+          const hint = this.add.text(0, 14, "Level-up choices will be logged here", {
             fontSize: "13px",
             color: "#5f789c",
             align: "center"
@@ -1790,18 +2334,18 @@
           if (!buff) {
             return;
           }
-          const y = -102 + index * 48;
-          const row = this.add.rectangle(0, y, 214, 40, 0x10192a, 0.88)
-            .setStrokeStyle(1, buff.color, 0.35);
-          const icon = this.add.image(-82, y, buff.icon)
-            .setDisplaySize(28, 28);
-          const name = this.add.text(-58, y, buff.name, {
-            fontSize: "15px",
+          const y = -112 + index * 50;
+          const row = this.add.rectangle(0, y, 208, 40, 0x10192a, 0.78)
+            .setStrokeStyle(1, buff.color, 0.30);
+          const icon = this.add.image(-76, y, buff.icon)
+            .setDisplaySize(27, 27);
+          const name = this.add.text(-52, y, buff.name, {
+            fontSize: "14px",
             color: "#ffffff",
             fontStyle: "700"
           }).setOrigin(0, 0.5);
-          const category = this.add.text(88, y, buff.category, {
-            fontSize: "12px",
+          const category = this.add.text(84, y, buff.category, {
+            fontSize: "11px",
             color: Phaser.Display.Color.IntegerToColor(buff.color).rgba,
             fontStyle: "700"
           }).setOrigin(1, 0.5);
@@ -1809,7 +2353,7 @@
         });
 
         if (selectedBuffs.length > visibleBuffs.length) {
-          const more = this.add.text(0, 148, `+${selectedBuffs.length - visibleBuffs.length} 项强化`, {
+          const more = this.add.text(0, 156, `+${selectedBuffs.length - visibleBuffs.length} more`, {
             fontSize: "12px",
             color: "#70cfff"
           }).setOrigin(0.5);
@@ -1841,12 +2385,12 @@
         const banner = this.add.image(0, 0, "waveWarningBanner")
           .setDisplaySize(740, 124)
           .setAlpha(0.92);
-        const title = this.add.text(0, -8, `WAVE ${payload.wave}`, {
+        const title = this.add.text(0, -8, payload.title || `WAVE ${payload.wave}`, {
           fontSize: "34px",
           fontStyle: "700",
           color: "#ffffff"
         }).setOrigin(0.5).setStroke("#ff3864", 5);
-        const subtitle = this.add.text(0, 30, "噬码体强度上升", {
+        const subtitle = this.add.text(0, 30, payload.subtitle || "噬码体强度上升", {
           fontSize: "18px",
           color: "#8ff6ff",
           fontStyle: "700"
@@ -1931,7 +2475,7 @@
         const hitArea = this.add.rectangle(0, 0, 282, 424, 0x000000, 0.001)
           .setInteractive({ useHandCursor: true });
         const category = this.add.text(0, -146, buff.category, {
-          fontSize: "18px",
+          fontSize: "16px",
           color: Phaser.Display.Color.IntegerToColor(buff.color).rgba,
           fontStyle: "700"
         }).setOrigin(0.5);
@@ -1939,15 +2483,15 @@
           ? this.add.image(0, -78, buff.icon).setDisplaySize(82, 82)
           : this.add.circle(0, -78, 28, buff.color, 0.92).setStrokeStyle(2, 0xffffff, 0.42);
         const name = this.add.text(0, -12, buff.name, {
-          fontSize: "28px",
+          fontSize: "24px",
           color: "#ffffff",
           fontStyle: "700"
         }).setOrigin(0.5);
         const desc = this.add.text(0, 58, buff.desc, {
-          fontSize: "21px",
+          fontSize: "17px",
           color: "#c8d7ef",
           align: "center",
-          wordWrap: { width: 210 }
+          wordWrap: { width: 224 }
         }).setOrigin(0.5);
         const rarityText = {
           common: "COMMON",
@@ -1962,7 +2506,7 @@
         group.add([bg, category, name, desc, rarityLabel, icon, hitArea]);
 
         const choose = () => {
-          this.buildPanel.setVisible(true);
+          this.buildPanel.setVisible(false);
           this.choiceLayer.removeAll(true);
           this.game.events.emit("buff-selected", buff.id);
           this.flushPendingWaveWarning();
@@ -1987,10 +2531,10 @@
       }
 
       getBuffRarity(buff) {
-        if (["bullet_count", "pierce"].includes(buff.id)) {
+        if (["bullet_count", "pierce", "artillery_unlock", "shell_salvo"].includes(buff.id)) {
           return "epic";
         }
-        if (["attack_speed", "damage_reduce", "xp_gain", "pickup_range"].includes(buff.id)) {
+        if (["attack_speed", "damage_reduce", "xp_gain", "pickup_range", "blast_radius"].includes(buff.id)) {
           return "rare";
         }
         return "common";
@@ -2010,12 +2554,13 @@
       }
 
       create() {
+        const isVictory = this.result.outcome === "victory";
         musicDirector.bind(this);
         musicDirector.playLoop("bgmMenu", { fadeDuration: 900, volume: 0.34 });
         this.add.image(CONFIG.world.width / 2, CONFIG.world.height / 2, "arenaBg")
           .setDisplaySize(CONFIG.world.width, CONFIG.world.height)
           .setAlpha(0.32)
-          .setTint(0xff3864);
+          .setTint(isVictory ? 0x47f7ff : 0xff3864);
         this.grid = this.add.graphics();
         this.drawBackground();
         this.add.image(CONFIG.world.width / 2, 372, "gameOverPanel")
@@ -2024,16 +2569,18 @@
         this.add.rectangle(CONFIG.world.width / 2, 330, 420, 292, 0x06111f, 0.84)
           .setStrokeStyle(1, 0x47f7ff, 0.34);
 
-        this.add.text(CONFIG.world.width / 2, 150, "信号中断", {
+        this.add.text(CONFIG.world.width / 2, 150, isVictory ? "通关完成" : "信号中断", {
           fontSize: "66px",
           fontStyle: "700",
           color: "#ffffff"
-        }).setOrigin(0.5).setStroke("#ff3864", 6);
+        }).setOrigin(0.5).setStroke(isVictory ? "#47f7ff" : "#ff3864", 6);
 
         const statsText = [
+          `结局  ${isVictory ? "白核幸存" : "信号中断"}`,
           `存活时长  ${formatTime(this.result.time)}`,
           `击杀总数  ${this.result.kills}`,
           `最高等级  ${this.result.level}`,
+          `阶段Boss  ${this.result.bosses || 0} / ${CONFIG.bosses.length}`,
           `抵达波次  ${this.result.wave}`
         ];
         this.add.text(CONFIG.world.width / 2, 300, statsText, {
