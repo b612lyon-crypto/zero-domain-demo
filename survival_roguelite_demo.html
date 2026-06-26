@@ -468,7 +468,7 @@
       bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
     };
 
-    const DEMO_BUILD = "zero-domain-20260626-artillery-boss-clean-bullet-nerf";
+    const DEMO_BUILD = "zero-domain-20260626-start-briefing";
     window.ZERO_DOMAIN_BUILD = DEMO_BUILD;
     console.info(`[ZERO DOMAIN] build ${DEMO_BUILD}`);
 
@@ -796,22 +796,62 @@
         this.title.setStroke("#1ef7ff", 5);
         this.title.setShadow(0, 0, "#47f7ff", 24, true, true);
 
-        this.subtitle = this.add.text(CONFIG.world.width / 2, 257, "零号算域：白核幸存者", {
+        this.subtitle = this.add.text(CONFIG.world.width / 2, 248, "零号算域：白核幸存者行动简报", {
           fontSize: "24px",
           color: "#8ff6ff"
         }).setOrigin(0.5);
 
-        this.add.text(CONFIG.world.width / 2, 334, "WASD 移动 · 自动锁定最近敌人 · 升级三选一强化", {
-          fontSize: "24px",
+        this.add.text(CONFIG.world.width / 2, 298, "你将被投放进失控算域，边走位边成长，撑到系统重启完成。", {
+          fontSize: "20px",
           color: "#d5e7ff"
         }).setOrigin(0.5);
 
-        this.add.text(CONFIG.world.width / 2, 385, "单局 8 分钟，击杀掉落经验球，持续成长压制敌潮", {
-          fontSize: "20px",
+        const briefingBackdrop = this.add.rectangle(CONFIG.world.width / 2, 438, 928, 228, 0x07121f, 0.74)
+          .setStrokeStyle(2, 0x2bdfff, 0.26);
+        const sectionCenters = [
+          CONFIG.world.width / 2 - 286,
+          CONFIG.world.width / 2,
+          CONFIG.world.width / 2 + 286
+        ];
+        const sectionAccents = [0x47f7ff, 0xff6aa8, 0xffd76a];
+        const sectionData = [
+          {
+            title: "任务背景",
+            body: "ZERO DOMAIN 已失控，整片城市节点正在被敌性算法吞没。你是唯一还能稳定白核的幸存者，必须顶住敌潮并阻止三名阶段 Boss 完成接管。"
+          },
+          {
+            title: "作战规则",
+            body: "WASD 移动，角色会自动锁定最近敌人持续开火。击杀敌人掉落经验球，吃满经验后可三选一强化；被敌人贴身围住时会快速掉血。"
+          },
+          {
+            title: "胜利目标",
+            body: "活满 8 分钟即通关。2:00、4:00、6:00 各出现一名阶段 Boss，越往后越凶。前期优先补移动、生存或基础火力，会更容易起势。"
+          }
+        ];
+
+        sectionData.forEach((section, index) => {
+          const centerX = sectionCenters[index];
+          this.add.rectangle(centerX, 438, 254, 184, 0x0b1b2c, 0.9)
+            .setStrokeStyle(2, sectionAccents[index], 0.36);
+          this.add.text(centerX - 102, 367, section.title, {
+            fontSize: "22px",
+            fontStyle: "700",
+            color: "#f7fbff"
+          }).setOrigin(0, 0.5);
+          this.add.text(centerX - 102, 394, section.body, {
+            fontSize: "17px",
+            color: "#b9cae1",
+            lineSpacing: 9,
+            wordWrap: { width: 204 }
+          }).setOrigin(0, 0);
+        });
+
+        this.add.text(CONFIG.world.width / 2, 575, "点击开始后会直接进入战场，目标只有一个：活下来。", {
+          fontSize: "18px",
           color: "#7f97b9"
         }).setOrigin(0.5);
 
-        const button = this.add.rectangle(CONFIG.world.width / 2, 485, 270, 68, 0x0f2438, 0.95)
+        const button = this.add.rectangle(CONFIG.world.width / 2, 622, 270, 68, 0x0f2438, 0.95)
           .setStrokeStyle(2, CONFIG.ui.neonCyan, 1)
           .setInteractive({ useHandCursor: true });
         const buttonText = this.add.text(button.x, button.y, "开始游戏", {
@@ -837,7 +877,7 @@
           this.time.delayedCall(120, () => this.scene.start("GameScene"));
         });
 
-        this.add.text(CONFIG.world.width / 2, 650, "Phaser.js v3 · 本地素材包 · 程序化音频", {
+        this.add.text(CONFIG.world.width / 2, 683, "Phaser.js v3 · 本地素材包 · 程序化音频", {
           fontSize: "16px",
           color: "#55708d"
         }).setOrigin(0.5);
