@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZERO DOMAIN - 鐧芥牳骞稿瓨鑰?/title>
+  <title>ZERO DOMAIN - 白核幸存者</title>
   <link rel="icon" href="data:," />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
@@ -35,7 +35,7 @@
     "use strict";
 
     // =============================
-    // 鍏ㄥ眬鏁板€奸厤缃尯锛氶潰璇曟紨绀烘椂鍙紭鍏堣皟鏁磋繖閲?
+    // 全局数值配置区：演示时可优先调这里。
     // =============================
     const CONFIG = {
       world: {
@@ -761,7 +761,7 @@
     }
 
     // =============================
-    // 寮€濮嬬晫闈?
+    // 开始界面
     // =============================
     class StartScene extends Phaser.Scene {
       constructor() {
@@ -909,7 +909,7 @@
     }
 
     // =============================
-    // 涓绘父鎴忛€昏緫
+    // 主游戏逻辑
     // =============================
     class GameScene extends Phaser.Scene {
       constructor() {
