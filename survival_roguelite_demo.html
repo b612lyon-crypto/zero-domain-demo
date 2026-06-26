@@ -468,7 +468,7 @@
       bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
     };
 
-    const DEMO_BUILD = "zero-domain-20260626-start-briefing";
+    const DEMO_BUILD = "zero-domain-20260626-start-briefing-layout-fix";
     window.ZERO_DOMAIN_BUILD = DEMO_BUILD;
     console.info(`[ZERO DOMAIN] build ${DEMO_BUILD}`);
 
@@ -817,36 +817,50 @@
         const sectionData = [
           {
             title: "任务背景",
-            body: "ZERO DOMAIN 已失控，整片城市节点正在被敌性算法吞没。你是唯一还能稳定白核的幸存者，必须顶住敌潮并阻止三名阶段 Boss 完成接管。"
+            body: [
+              "ZERO DOMAIN 已失控",
+              "敌性算法吞没城市节点",
+              "你要守住白核",
+              "顶住三名阶段 Boss"
+            ]
           },
           {
             title: "作战规则",
-            body: "WASD 移动，角色会自动锁定最近敌人持续开火。击杀敌人掉落经验球，吃满经验后可三选一强化；被敌人贴身围住时会快速掉血。"
+            body: [
+              "WASD 移动走位",
+              "自动锁定最近敌人",
+              "击杀后拾取经验球",
+              "升级时三选一强化"
+            ]
           },
           {
             title: "胜利目标",
-            body: "活满 8 分钟即通关。2:00、4:00、6:00 各出现一名阶段 Boss，越往后越凶。前期优先补移动、生存或基础火力，会更容易起势。"
+            body: [
+              "存活 8 分钟通关",
+              "2 / 4 / 6 分钟出 Boss",
+              "越往后敌潮越凶",
+              "前期先补生存与火力"
+            ]
           }
         ];
 
         sectionData.forEach((section, index) => {
           const centerX = sectionCenters[index];
-          this.add.rectangle(centerX, 438, 254, 184, 0x0b1b2c, 0.9)
+          this.add.rectangle(centerX, 438, 270, 184, 0x0b1b2c, 0.9)
             .setStrokeStyle(2, sectionAccents[index], 0.36);
-          this.add.text(centerX - 102, 367, section.title, {
+          this.add.text(centerX - 108, 367, section.title, {
             fontSize: "22px",
             fontStyle: "700",
             color: "#f7fbff"
           }).setOrigin(0, 0.5);
-          this.add.text(centerX - 102, 394, section.body, {
-            fontSize: "17px",
+          this.add.text(centerX - 108, 397, section.body.join("\n"), {
+            fontSize: "16px",
             color: "#b9cae1",
-            lineSpacing: 9,
-            wordWrap: { width: 204 }
+            lineSpacing: 8
           }).setOrigin(0, 0);
         });
 
-        this.add.text(CONFIG.world.width / 2, 575, "点击开始后会直接进入战场，目标只有一个：活下来。", {
+        this.add.text(CONFIG.world.width / 2, 560, "点击开始后会直接进入战场，目标只有一个：活下来。", {
           fontSize: "18px",
           color: "#7f97b9"
         }).setOrigin(0.5);
