@@ -1,0 +1,8 @@
+.git
+.github
+deploy
+output
+verification
+*.zip
+Thumbs.db
+.DS_Store
