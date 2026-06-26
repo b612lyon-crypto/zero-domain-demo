@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZERO DOMAIN - 白核幸存者</title>
+  <title>ZERO DOMAIN - 鐧芥牳骞稿瓨鑰?/title>
   <link rel="icon" href="data:," />
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
@@ -35,7 +35,7 @@
     "use strict";
 
     // =============================
-    // 全局数值配置区：面试演示时可优先调整这里
+    // 鍏ㄥ眬鏁板€奸厤缃尯锛氶潰璇曟紨绀烘椂鍙紭鍏堣皟鏁磋繖閲?
     // =============================
     const CONFIG = {
       world: {
@@ -268,7 +268,7 @@
         shellFallDuration: 520,
         shellSpawnHeight: 240,
         baseDamage: 38,
-        baseRadius: 82,
+        baseRadius: 70,
         burnDuration: 1.8,
         burnTickInterval: 0.65,
         burnDamagePerTick: 4,
@@ -299,10 +299,10 @@
           id: "bullet_count",
           category: "攻击",
           name: "Solar Bloom",
-          desc: "弹幕数量翻倍，光芒造成针刺伤害",
+          desc: "子弹数量 +1，光芒造成针刺伤害",
           color: 0x67e8f9,
           icon: "buffIconSolarBloom",
-          apply(stats) { stats.bulletCount = Math.min(stats.bulletCount * 2, 16); }
+          apply(stats) { stats.bulletCount = Math.min(stats.bulletCount + 1, 10); }
         },
         {
           id: "pierce",
@@ -398,7 +398,7 @@
           id: "blast_radius",
           category: "攻击",
           name: "爆域扩张",
-          desc: "扩大炮击爆炸和灼烧范围",
+          desc: "略微扩大炮击爆炸和灼烧范围",
           color: 0xffa94d,
           icon: "buffIconBlastRadius",
           apply(stats, scene) {
@@ -422,9 +422,9 @@
       enemyPurple: "assets/zero-domain/enemy_purple_tank.png",
       enemyBlueElite: "assets/zero-domain/enemy_blue_elite.png",
       enemyBlackMiniboss: "assets/zero-domain/enemy_black_miniboss.png",
-      bossPhase1NodeWarden: "assets/zero-domain/boss_phase1_node_warden.png",
-      bossPhase2PrismOracle: "assets/zero-domain/boss_phase2_prism_oracle.png",
-      bossPhase3RedRingReaper: "assets/zero-domain/boss_phase3_red_ring_reaper.png",
+      bossPhase1NodeWarden: "assets/zero-domain/boss_phase1_node_warden_clean.png",
+      bossPhase2PrismOracle: "assets/zero-domain/boss_phase2_prism_oracle_clean.png",
+      bossPhase3RedRingReaper: "assets/zero-domain/boss_phase3_red_ring_reaper_clean.png",
       bulletBasic: "assets/zero-domain/bullet_cyan_basic.png",
       bulletSolar: "assets/zero-domain/bullet_solar_lance_v2_clean.png",
       hitImpact: "assets/zero-domain/vfx_hit_impact.png",
@@ -468,7 +468,7 @@
       bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
     };
 
-    const DEMO_BUILD = "zero-domain-20260626-boss-assets-artillery-nerf";
+    const DEMO_BUILD = "zero-domain-20260626-artillery-boss-clean-bullet-nerf";
     window.ZERO_DOMAIN_BUILD = DEMO_BUILD;
     console.info(`[ZERO DOMAIN] build ${DEMO_BUILD}`);
 
@@ -761,7 +761,7 @@
     }
 
     // =============================
-    // 开始界面
+    // 寮€濮嬬晫闈?
     // =============================
     class StartScene extends Phaser.Scene {
       constructor() {
@@ -801,12 +801,12 @@
           color: "#8ff6ff"
         }).setOrigin(0.5);
 
-        this.add.text(CONFIG.world.width / 2, 334, "WASD 移动  ·  自动锁定最近敌人  ·  升级三选一强化", {
+        this.add.text(CONFIG.world.width / 2, 334, "WASD 移动 · 自动锁定最近敌人 · 升级三选一强化", {
           fontSize: "24px",
           color: "#d5e7ff"
         }).setOrigin(0.5);
 
-        this.add.text(CONFIG.world.width / 2, 385, "单局 3-5 分钟，击杀掉落经验球，持续成长压制敌潮", {
+        this.add.text(CONFIG.world.width / 2, 385, "单局 8 分钟，击杀掉落经验球，持续成长压制敌潮", {
           fontSize: "20px",
           color: "#7f97b9"
         }).setOrigin(0.5);
@@ -837,7 +837,7 @@
           this.time.delayedCall(120, () => this.scene.start("GameScene"));
         });
 
-        this.add.text(CONFIG.world.width / 2, 650, "Phaser.js v3 · 本地素材包 · 程序化音效", {
+        this.add.text(CONFIG.world.width / 2, 650, "Phaser.js v3 · 本地素材包 · 程序化音频", {
           fontSize: "16px",
           color: "#55708d"
         }).setOrigin(0.5);
@@ -869,7 +869,7 @@
     }
 
     // =============================
-    // 主游戏逻辑
+    // 涓绘父鎴忛€昏緫
     // =============================
     class GameScene extends Phaser.Scene {
       constructor() {
@@ -1107,7 +1107,7 @@
       }
 
       getVolleyAngles(baseAngle) {
-        const count = Math.max(1, Math.min(16, Math.round(this.stats.bulletCount)));
+        const count = Math.max(1, Math.min(10, Math.round(this.stats.bulletCount)));
         if (count === 1) {
           return [baseAngle];
         }
@@ -1278,6 +1278,10 @@
         return this.elapsed >= 180 ? 0.34 : 0.72;
       }
 
+      getArtilleryVisualIntensity() {
+        return this.elapsed >= 180 ? 0.62 : 0.92;
+      }
+
       unlockArtillery() {
         if (this.artillery.unlocked) {
           return;
@@ -1358,11 +1362,11 @@
             return;
           }
 
-          const intensity = this.getVisualIntensity();
+          const intensity = this.getArtilleryVisualIntensity();
           const warningDuration = CONFIG.artillery.warningDuration;
           const fallDuration = CONFIG.artillery.shellFallDuration;
           const reticle = this.add.image(x, y, "artilleryTargetReticle")
-            .setDisplaySize(this.artillery.radius * 1.78, this.artillery.radius * 1.78)
+            .setDisplaySize(this.artillery.radius * 1.62, this.artillery.radius * 1.62)
             .setAlpha(0)
             .setBlendMode(Phaser.BlendModes.ADD)
             .setScale(0.72);
@@ -1370,13 +1374,13 @@
 
           this.tweens.add({
             targets: reticle,
-            alpha: 0.38 * intensity,
-            scaleX: 0.96,
-            scaleY: 0.96,
+            alpha: 0.68 * intensity,
+            scaleX: 1.05,
+            scaleY: 1.05,
             duration: 160,
             ease: "Cubic.easeOut",
             yoyo: true,
-            repeat: 2
+            repeat: 3
           });
 
           const shellLaunchDelay = Math.max(40, warningDuration - fallDuration);
@@ -1398,11 +1402,11 @@
       }
 
       spawnArtilleryShell(x, y, travelMs) {
-        const intensity = this.getVisualIntensity();
+        const intensity = this.getArtilleryVisualIntensity();
         const shell = this.add.image(x - 138, y - CONFIG.artillery.shellSpawnHeight, "artilleryShell")
           .setScale(0.13)
           .setRotation(-Math.PI / 3)
-          .setAlpha(0.68 * intensity)
+          .setAlpha(0.84 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(shell);
         soundSynth.playArtilleryLaunch(this);
@@ -1420,14 +1424,14 @@
       }
 
       resolveArtilleryImpact(x, y) {
-        const intensity = this.getVisualIntensity();
+        const intensity = this.getArtilleryVisualIntensity();
         const core = this.add.image(x, y, "artilleryExplosionCore")
-          .setDisplaySize(this.artillery.radius * 1.56, this.artillery.radius * 1.56)
-          .setAlpha(0.34 * intensity)
+          .setDisplaySize(this.artillery.radius * 1.7, this.artillery.radius * 1.7)
+          .setAlpha(0.66 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         const shockwave = this.add.image(x, y, "artilleryShockwave")
-          .setDisplaySize(this.artillery.radius * 1.6, this.artillery.radius * 1.6)
-          .setAlpha(0.24 * intensity)
+          .setDisplaySize(this.artillery.radius * 1.74, this.artillery.radius * 1.74)
+          .setAlpha(0.48 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD)
           .setScale(0.78);
         this.particleLayer.add([core, shockwave]);
@@ -1473,10 +1477,10 @@
       }
 
       spawnBurnField(x, y) {
-        const intensity = this.getVisualIntensity();
+        const intensity = this.getArtilleryVisualIntensity();
         const burn = this.add.image(x, y, "artilleryBurnField")
-          .setDisplaySize(this.artillery.burnRadius * 1.48, this.artillery.burnRadius * 1.48)
-          .setAlpha(0.10 * intensity);
+          .setDisplaySize(this.artillery.burnRadius * 1.52, this.artillery.burnRadius * 1.52)
+          .setAlpha(0.24 * intensity);
         this.hazardLayer.add(burn);
         this.artilleryFields.push({
           x,
@@ -1494,7 +1498,7 @@
           const field = this.artilleryFields[i];
           field.life -= dt;
           field.tick -= dt;
-          field.sprite.alpha = (0.025 + Math.max(0, field.life / this.artillery.burnDuration) * 0.07) * this.getVisualIntensity();
+          field.sprite.alpha = (0.045 + Math.max(0, field.life / this.artillery.burnDuration) * 0.15) * this.getArtilleryVisualIntensity();
           field.sprite.rotation += dt * 0.08;
           field.sprite.setScale(1 + Math.sin(this.time.now * 0.002 + i) * 0.01);
 
@@ -1989,7 +1993,7 @@
       getAvailableLevelUpChoices() {
         return CONFIG.buffs.filter((buff) => {
           const pickCount = this.getBuffPickCount(buff.id);
-          if (buff.id === "bullet_count" && this.stats.bulletCount >= 16) {
+          if (buff.id === "bullet_count" && (this.level < 3 || this.stats.bulletCount >= 10)) {
             return false;
           }
           if (buff.id === "artillery_unlock") {
@@ -2180,7 +2184,7 @@
     }
 
     // =============================
-    // UI 叠加层
+    // UI 鍙犲姞灞?
     // =============================
     class UIScene extends Phaser.Scene {
       constructor() {
@@ -2394,7 +2398,7 @@
           fontStyle: "700",
           color: "#ffffff"
         }).setOrigin(0.5).setStroke("#ff3864", 5);
-        const subtitle = this.add.text(0, 30, payload.subtitle || "噬码体强度上升", {
+        const subtitle = this.add.text(0, 30, payload.subtitle || "敌潮强度上升", {
           fontSize: "18px",
           color: "#8ff6ff",
           fontStyle: "700"
@@ -2546,7 +2550,7 @@
     }
 
     // =============================
-    // 结算界面
+    // 缁撶畻鐣岄潰
     // =============================
     class GameOverScene extends Phaser.Scene {
       constructor() {
@@ -2656,3 +2660,4 @@
   </script>
 </body>
 </html>
+
