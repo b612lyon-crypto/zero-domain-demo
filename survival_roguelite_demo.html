@@ -173,8 +173,8 @@
             hp: 280,
             speed: 48,
             xp: 72,
-            unlockWave: 999,
-            weight: 0
+            unlockWave: 6,
+            weight: 0.35
           }
         }
       },
@@ -186,12 +186,11 @@
           id: "warden",
           name: "Phase Boss I",
           title: "2:00  节点守卫",
-          texture: "enemyBlackMiniboss",
-          tint: 0x77f7ff,
+          texture: "bossPhase1NodeWarden",
           color: 0x77f7ff,
-          radius: 48,
-          displaySize: 118,
-          hp: 920,
+          radius: 54,
+          displaySize: 150,
+          hp: 2400,
           speed: 48,
           xp: 140,
           spawnAt: 120,
@@ -203,12 +202,11 @@
           id: "oracle",
           name: "Phase Boss II",
           title: "4:00  棱镜先知",
-          texture: "enemyBlueElite",
-          tint: 0xff75ff,
+          texture: "bossPhase2PrismOracle",
           color: 0xff75ff,
-          radius: 52,
-          displaySize: 132,
-          hp: 1680,
+          radius: 60,
+          displaySize: 162,
+          hp: 4800,
           speed: 62,
           xp: 220,
           spawnAt: 240,
@@ -220,12 +218,11 @@
           id: "reaper",
           name: "Phase Boss III",
           title: "6:00  赤环收割者",
-          texture: "enemyPurple",
-          tint: 0xff4f7b,
+          texture: "bossPhase3RedRingReaper",
           color: 0xff4f7b,
-          radius: 58,
-          displaySize: 148,
-          hp: 2850,
+          radius: 66,
+          displaySize: 178,
+          hp: 7600,
           speed: 76,
           xp: 320,
           spawnAt: 360,
@@ -266,17 +263,17 @@
       artillery: {
         offerTime: 105,
         minEnemiesToFire: 2,
-        baseInterval: 6400,
+        baseInterval: 7200,
         warningDuration: 980,
         shellFallDuration: 520,
         shellSpawnHeight: 240,
-        baseDamage: 56,
-        baseRadius: 96,
-        burnDuration: 2.4,
-        burnTickInterval: 0.55,
-        burnDamagePerTick: 7,
+        baseDamage: 38,
+        baseRadius: 82,
+        burnDuration: 1.8,
+        burnTickInterval: 0.65,
+        burnDamagePerTick: 4,
         shellCount: 1,
-        maxShellCount: 3,
+        maxShellCount: 2,
         shellSpread: 82
       },
       buffs: [
@@ -405,11 +402,11 @@
           color: 0xffa94d,
           icon: "buffIconBlastRadius",
           apply(stats, scene) {
-            scene.artillery.radius *= 1.1;
-            scene.artillery.damage *= 1.05;
-            scene.artillery.burnRadius *= 1.08;
-            scene.artillery.burnDamage *= 1.06;
-            scene.artillery.burnDuration += 0.25;
+            scene.artillery.radius *= 1.06;
+            scene.artillery.damage *= 1.03;
+            scene.artillery.burnRadius *= 1.05;
+            scene.artillery.burnDamage *= 1.03;
+            scene.artillery.burnDuration += 0.15;
           }
         }
       ]
@@ -425,6 +422,9 @@
       enemyPurple: "assets/zero-domain/enemy_purple_tank.png",
       enemyBlueElite: "assets/zero-domain/enemy_blue_elite.png",
       enemyBlackMiniboss: "assets/zero-domain/enemy_black_miniboss.png",
+      bossPhase1NodeWarden: "assets/zero-domain/boss_phase1_node_warden.png",
+      bossPhase2PrismOracle: "assets/zero-domain/boss_phase2_prism_oracle.png",
+      bossPhase3RedRingReaper: "assets/zero-domain/boss_phase3_red_ring_reaper.png",
       bulletBasic: "assets/zero-domain/bullet_cyan_basic.png",
       bulletSolar: "assets/zero-domain/bullet_solar_lance_v2_clean.png",
       hitImpact: "assets/zero-domain/vfx_hit_impact.png",
@@ -468,7 +468,7 @@
       bgmRedAlert: "assets/zero-domain/Sector_Seven_Red_Alert.mp3"
     };
 
-    const DEMO_BUILD = "zero-domain-20260626-boss-victory-balance";
+    const DEMO_BUILD = "zero-domain-20260626-boss-assets-artillery-nerf";
     window.ZERO_DOMAIN_BUILD = DEMO_BUILD;
     console.info(`[ZERO DOMAIN] build ${DEMO_BUILD}`);
 
@@ -1154,14 +1154,15 @@
       }
 
       spawnSunburstMuzzle(baseAngle, volleyCount) {
+        const intensity = this.getVisualIntensity();
         const distance = volleyCount >= 16 ? 0 : CONFIG.player.size * 0.78;
         const x = this.player.x + Math.cos(baseAngle) * distance;
         const y = this.player.y + Math.sin(baseAngle) * distance;
-        const scale = volleyCount >= 16 ? 0.14 : 0.08 + volleyCount * 0.01;
+        const scale = (volleyCount >= 16 ? 0.14 : 0.08 + volleyCount * 0.01) * (this.elapsed >= 180 ? 0.78 : 1);
         const flash = this.add.image(x, y, "sunburstMuzzle")
           .setScale(scale)
           .setRotation(baseAngle + Math.PI / 2)
-          .setAlpha(0.30)
+          .setAlpha(0.26 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(flash);
         this.tweens.add({
@@ -1228,6 +1229,7 @@
 
       spawnBullet(angle, volleyCount = 1) {
         const isSolarVolley = volleyCount > 1;
+        const intensity = this.getVisualIntensity();
         const spawnDistance = volleyCount >= 16 ? CONFIG.player.size * 0.4 : CONFIG.player.size * 0.72;
         const damageScale = this.getVolleyDamageScale(volleyCount);
         const lifetimeScale = this.getVolleyLifetimeScale(volleyCount);
@@ -1239,14 +1241,14 @@
           isSolarVolley ? 42 : 34,
           isSolarVolley ? 12 : 8,
           CONFIG.bullet.glowColor,
-          isSolarVolley ? 0.22 : 0.16
+          (isSolarVolley ? 0.18 : 0.13) * intensity
         )
           .setRotation(angle)
           .setBlendMode(Phaser.BlendModes.ADD);
         const core = this.add.image(x, y, isSolarVolley ? "bulletSolar" : "bulletBasic")
           .setDisplaySize(isSolarVolley ? (volleyCount >= 16 ? 36 : 40) : 44, isSolarVolley ? (volleyCount >= 16 ? 14 : 18) : 16)
           .setRotation(angle)
-          .setAlpha(isSolarVolley ? 0.92 : 1)
+          .setAlpha(isSolarVolley ? (this.elapsed >= 180 ? 0.66 : 0.86) : 1)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.bulletLayer.add([glow, core]);
 
@@ -1269,11 +1271,11 @@
       }
 
       getArtilleryCooldown() {
-        return Math.max(2600, CONFIG.artillery.baseInterval * this.getAttackCadenceMultiplier());
+        return Math.max(3400, CONFIG.artillery.baseInterval * this.getAttackCadenceMultiplier());
       }
 
       getVisualIntensity() {
-        return this.elapsed >= 180 ? 0.58 : 0.82;
+        return this.elapsed >= 180 ? 0.34 : 0.72;
       }
 
       unlockArtillery() {
@@ -1356,10 +1358,11 @@
             return;
           }
 
+          const intensity = this.getVisualIntensity();
           const warningDuration = CONFIG.artillery.warningDuration;
           const fallDuration = CONFIG.artillery.shellFallDuration;
           const reticle = this.add.image(x, y, "artilleryTargetReticle")
-            .setDisplaySize(this.artillery.radius * 2.05, this.artillery.radius * 2.05)
+            .setDisplaySize(this.artillery.radius * 1.78, this.artillery.radius * 1.78)
             .setAlpha(0)
             .setBlendMode(Phaser.BlendModes.ADD)
             .setScale(0.72);
@@ -1367,13 +1370,13 @@
 
           this.tweens.add({
             targets: reticle,
-            alpha: 0.72,
-            scaleX: 1.02,
-            scaleY: 1.02,
+            alpha: 0.38 * intensity,
+            scaleX: 0.96,
+            scaleY: 0.96,
             duration: 160,
             ease: "Cubic.easeOut",
             yoyo: true,
-            repeat: 4
+            repeat: 2
           });
 
           const shellLaunchDelay = Math.max(40, warningDuration - fallDuration);
@@ -1395,10 +1398,11 @@
       }
 
       spawnArtilleryShell(x, y, travelMs) {
+        const intensity = this.getVisualIntensity();
         const shell = this.add.image(x - 138, y - CONFIG.artillery.shellSpawnHeight, "artilleryShell")
-          .setScale(0.16)
+          .setScale(0.13)
           .setRotation(-Math.PI / 3)
-          .setAlpha(0.96)
+          .setAlpha(0.68 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(shell);
         soundSynth.playArtilleryLaunch(this);
@@ -1406,8 +1410,8 @@
           targets: shell,
           x,
           y,
-          scaleX: 0.22,
-          scaleY: 0.22,
+          scaleX: 0.17,
+          scaleY: 0.17,
           rotation: 0.65,
           duration: travelMs,
           ease: "Quad.easeIn",
@@ -1418,19 +1422,19 @@
       resolveArtilleryImpact(x, y) {
         const intensity = this.getVisualIntensity();
         const core = this.add.image(x, y, "artilleryExplosionCore")
-          .setDisplaySize(this.artillery.radius * 1.88, this.artillery.radius * 1.88)
-          .setAlpha(0.56 * intensity)
+          .setDisplaySize(this.artillery.radius * 1.56, this.artillery.radius * 1.56)
+          .setAlpha(0.34 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         const shockwave = this.add.image(x, y, "artilleryShockwave")
-          .setDisplaySize(this.artillery.radius * 1.92, this.artillery.radius * 1.92)
-          .setAlpha(0.44 * intensity)
+          .setDisplaySize(this.artillery.radius * 1.6, this.artillery.radius * 1.6)
+          .setAlpha(0.24 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD)
           .setScale(0.78);
         this.particleLayer.add([core, shockwave]);
         this.spawnBurnField(x, y);
         this.spawnHitImpact(x, y);
         soundSynth.playArtilleryImpact(this);
-        this.cameras.main.shake(120, 0.0048);
+        this.cameras.main.shake(90, 0.0032);
 
         this.tweens.add({
           targets: core,
@@ -1471,8 +1475,8 @@
       spawnBurnField(x, y) {
         const intensity = this.getVisualIntensity();
         const burn = this.add.image(x, y, "artilleryBurnField")
-          .setDisplaySize(this.artillery.burnRadius * 1.86, this.artillery.burnRadius * 1.86)
-          .setAlpha(0.24 * intensity);
+          .setDisplaySize(this.artillery.burnRadius * 1.48, this.artillery.burnRadius * 1.48)
+          .setAlpha(0.10 * intensity);
         this.hazardLayer.add(burn);
         this.artilleryFields.push({
           x,
@@ -1490,9 +1494,9 @@
           const field = this.artilleryFields[i];
           field.life -= dt;
           field.tick -= dt;
-          field.sprite.alpha = (0.06 + Math.max(0, field.life / this.artillery.burnDuration) * 0.16) * this.getVisualIntensity();
-          field.sprite.rotation += dt * 0.14;
-          field.sprite.setScale(1 + Math.sin(this.time.now * 0.003 + i) * 0.018);
+          field.sprite.alpha = (0.025 + Math.max(0, field.life / this.artillery.burnDuration) * 0.07) * this.getVisualIntensity();
+          field.sprite.rotation += dt * 0.08;
+          field.sprite.setScale(1 + Math.sin(this.time.now * 0.002 + i) * 0.01);
 
           if (field.tick <= 0) {
             field.tick = CONFIG.artillery.burnTickInterval;
@@ -2024,8 +2028,8 @@
       spawnDeathExplosion(x, y, color) {
         const intensity = this.getVisualIntensity();
         const burst = this.add.image(x, y, "enemyDeath")
-          .setDisplaySize(92, 92)
-          .setAlpha(0.58 * intensity)
+          .setDisplaySize(76, 76)
+          .setAlpha(0.34 * intensity)
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(burst);
         this.tweens.add({
@@ -2038,7 +2042,7 @@
           onComplete: () => burst.destroy()
         });
 
-        const particleCount = this.elapsed >= 180 ? Math.max(4, Math.floor(CONFIG.feedback.deathParticles * 0.55)) : CONFIG.feedback.deathParticles;
+        const particleCount = this.elapsed >= 180 ? Math.max(3, Math.floor(CONFIG.feedback.deathParticles * 0.35)) : CONFIG.feedback.deathParticles;
         for (let i = 0; i < particleCount; i += 1) {
           const angle = (Math.PI * 2 / particleCount) * i + Phaser.Math.FloatBetween(-0.18, 0.18);
           const speed = Phaser.Math.Between(90, 270);
@@ -2058,8 +2062,8 @@
 
       spawnHitImpact(x, y) {
         const impact = this.add.image(x, y, "hitImpact")
-          .setDisplaySize(42, 42)
-          .setAlpha(0.54 * this.getVisualIntensity())
+          .setDisplaySize(34, 34)
+          .setAlpha(0.28 * this.getVisualIntensity())
           .setBlendMode(Phaser.BlendModes.ADD);
         this.particleLayer.add(impact);
         this.tweens.add({
